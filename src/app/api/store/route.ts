@@ -11,7 +11,7 @@ export async function PUT(req: Request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const { name, slug, whatsappNumber, logoUrl, showCategoryImages, categoryImageStyle } = await req.json();
+    const { name, slug, whatsappNumber, logoUrl, storeTitle, showCategoryImages, categoryImageStyle } = await req.json();
 
     // --- Validate required fields ---
     if (!name || typeof name !== "string" || name.trim().length === 0) {
