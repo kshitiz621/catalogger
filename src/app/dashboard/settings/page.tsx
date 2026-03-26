@@ -72,7 +72,16 @@ export default async function SettingsPage() {
           </div>
         </div>
         <div className="px-6 py-6">
-          <StoreSettingsForm initialData={store} />
+          <StoreSettingsForm 
+            initialData={{
+              name: store.name,
+              slug: store.slug,
+              whatsappNumber: store.whatsappNumber,
+              logoUrl: store.logoUrl,
+              showCategoryImages: store.showCategoryImages,
+              categoryImageStyle: store.categoryImageStyle
+            }} 
+          />
         </div>
       </section>
 

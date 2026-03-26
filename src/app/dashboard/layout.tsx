@@ -21,7 +21,10 @@ export default async function DashboardLayout({
   });
 
   return (
-    <DashboardLayoutClient session={session} store={store}>
+    <DashboardLayoutClient 
+      session={JSON.parse(JSON.stringify(session))} 
+      store={store ? JSON.parse(JSON.stringify(store)) : null}
+    >
       {children}
     </DashboardLayoutClient>
   );

@@ -125,7 +125,7 @@ export default async function ProductPage({ params }: PageProps) {
           </div>
           
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-            {relatedProducts.map((p) => (
+            {relatedProducts.map((p: any) => (
               <Link
                 key={p.id}
                 href={`/store/${store.slug}/product/${p.id}`}
