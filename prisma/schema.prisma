@@ -27,6 +27,7 @@ model Store {
   products        Product[]
   categories      Category[]
   logoUrl             String?
+  storeTitle          String?
   showCategoryImages  Boolean    @default(false)
   categoryImageStyle  String     @default("square") // "square" or "rounded"
   createdAt           DateTime   @default(now())

@@ -11,14 +11,22 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { storeSlug } = await params;
   const store = await prisma.store.findUnique({
     where: { slug: storeSlug },
-    select: { name: true },
+    select: { name: true, storeTitle: true, logoUrl: true },
   });
 
   if (!store) {
     return { title: "Store Not Found" };
   }
 
-  return { title: `${store.name} | Catalogue` };
+  const title = store.storeTitle || `${store.name} | Catalogue`;
+
+  return { 
+    title,
+    icons: store.logoUrl ? [
+      { rel: "icon", url: store.logoUrl },
+      { rel: "apple-touch-icon", url: store.logoUrl }
+    ] : undefined
+  };
 }
 
 export default async function StorePage({ params }: PageProps) {

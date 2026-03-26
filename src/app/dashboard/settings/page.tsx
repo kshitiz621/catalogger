@@ -21,6 +21,7 @@ export default async function SettingsPage() {
       slug: true, 
       whatsappNumber: true,
       logoUrl: true,
+      storeTitle: true,
       showCategoryImages: true,
       categoryImageStyle: true
     }

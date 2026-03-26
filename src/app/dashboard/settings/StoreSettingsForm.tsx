@@ -23,6 +23,7 @@ interface StoreSettingsFormProps {
     slug: string;
     whatsappNumber: string | null;
     logoUrl?: string | null;
+    storeTitle?: string | null;
     showCategoryImages?: boolean;
     categoryImageStyle?: string;
   };
@@ -39,6 +40,7 @@ export default function StoreSettingsForm({ initialData }: StoreSettingsFormProp
   const [slug, setSlug] = useState(initialData.slug);
   const [whatsappNumber, setWhatsappNumber] = useState(initialData.whatsappNumber || "");
   const [logoUrl, setLogoUrl] = useState(initialData.logoUrl || "");
+  const [storeTitle, setStoreTitle] = useState(initialData.storeTitle || "");
   const [showCategoryImages, setShowCategoryImages] = useState(initialData.showCategoryImages ?? false);
   const [categoryImageStyle, setCategoryImageStyle] = useState(initialData.categoryImageStyle ?? "square");
 
@@ -47,6 +49,7 @@ export default function StoreSettingsForm({ initialData }: StoreSettingsFormProp
     slug !== initialData.slug || 
     whatsappNumber !== (initialData.whatsappNumber || "") ||
     logoUrl !== (initialData.logoUrl || "") ||
+    storeTitle !== (initialData.storeTitle || "") ||
     showCategoryImages !== (initialData.showCategoryImages ?? false) ||
     categoryImageStyle !== (initialData.categoryImageStyle ?? "square");
 
@@ -84,7 +87,7 @@ export default function StoreSettingsForm({ initialData }: StoreSettingsFormProp
       const res = await fetch("/api/store", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, slug, whatsappNumber, logoUrl, showCategoryImages, categoryImageStyle }),
+        body: JSON.stringify({ name, slug, whatsappNumber, logoUrl, storeTitle, showCategoryImages, categoryImageStyle }),
       });
 
       const data = await res.json();
@@ -174,6 +177,23 @@ export default function StoreSettingsForm({ initialData }: StoreSettingsFormProp
               placeholder="Your incredible store name"
               className="w-full rounded-2xl border-2 border-border/80 bg-white px-4 py-4 text-base font-bold transition-all focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none shadow-sm" 
             />
+          </div>
+
+          {/* Store Title */}
+          <div className="group">
+            <label htmlFor="store-title" className="flex items-center gap-2 text-xs font-black text-foreground mb-3 uppercase tracking-widest opacity-80">
+              <LinkIcon className="w-4 h-4 text-primary" />
+              SEO Page Title
+            </label>
+            <input 
+              id="store-title"
+              type="text" 
+              value={storeTitle} 
+              onChange={(e) => setStoreTitle(e.target.value)} 
+              placeholder="e.g. Best Handmade Crafts | Shop Name"
+              className="w-full rounded-2xl border-2 border-border/80 bg-white px-4 py-4 text-base font-bold transition-all focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none shadow-sm" 
+            />
+            <p className="mt-2 text-[10px] text-muted-foreground font-medium uppercase tracking-wider">This title appears in browser tabs and search results.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

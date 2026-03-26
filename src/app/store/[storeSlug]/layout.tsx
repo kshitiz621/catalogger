@@ -13,7 +13,7 @@ export default async function StoreLayout({ children, params }: LayoutProps) {
 
   const store = await prisma.store.findUnique({
     where: { slug: storeSlug },
-    select: { id: true, name: true, slug: true },
+    select: { id: true, name: true, slug: true, logoUrl: true },
   });
 
   if (!store) {
@@ -26,6 +26,7 @@ export default async function StoreLayout({ children, params }: LayoutProps) {
         storeName={store.name}
         storeSlug={store.slug}
         storeId={store.id}
+        logoUrl={store.logoUrl}
       />
 
       <main className="flex-1">

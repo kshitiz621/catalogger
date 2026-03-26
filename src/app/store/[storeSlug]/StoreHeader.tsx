@@ -8,9 +8,10 @@ interface StoreHeaderProps {
   storeName: string;
   storeSlug: string;
   storeId: string;
+  logoUrl?: string | null;
 }
 
-export default function StoreHeader({ storeName, storeSlug, storeId }: StoreHeaderProps) {
+export default function StoreHeader({ storeName, storeSlug, storeId, logoUrl }: StoreHeaderProps) {
   const { itemCount } = useCart(storeId);
 
   return (
@@ -22,8 +23,12 @@ export default function StoreHeader({ storeName, storeSlug, storeId }: StoreHead
             href={`/store/${storeSlug}`}
             className="flex items-center gap-2.5 group"
           >
-            <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
-              <StoreIcon className="w-4 h-4 text-primary" />
+            <div className="w-10 h-10 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center group-hover:bg-primary/10 transition-colors overflow-hidden">
+              {logoUrl ? (
+                <img src={logoUrl} alt={storeName} className="w-full h-full object-cover" />
+              ) : (
+                <StoreIcon className="w-5 h-5 text-primary" />
+              )}
             </div>
             <span className="text-lg font-bold text-foreground tracking-tight group-hover:text-primary transition-colors">
               {storeName}

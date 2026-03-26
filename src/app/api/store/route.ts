@@ -80,6 +80,7 @@ export async function PUT(req: Request) {
         slug: cleanSlug,
         whatsappNumber: whatsappNumber ? String(whatsappNumber).replace(/\D/g, "") : null,
         logoUrl: logoUrl || null,
+        storeTitle: storeTitle || null,
         showCategoryImages: !!showCategoryImages,
         categoryImageStyle: categoryImageStyle || "square",
       },
