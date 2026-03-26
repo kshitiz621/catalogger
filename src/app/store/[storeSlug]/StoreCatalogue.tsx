@@ -2,17 +2,24 @@
 
 import { useState, useMemo } from "react";
 import { Search } from "lucide-react";
+import Link from "next/link";
 
-type CategoryProps = { id: string; name: string };
+type CategoryProps = { id: string; name: string; imageUrl?: string | null };
 type ProductProps = { id: string; name: string; price: number; imageUrl: string | null; categoryId: string | null };
 
 interface StoreCatalogueProps {
-  store: { name: string };
+  store: { 
+    name: string;
+    showCategoryImages?: boolean;
+    categoryImageStyle?: string;
+  };
+  storeSlug: string;
+  storeId: string;
   categories: CategoryProps[];
   products: ProductProps[];
 }
 
-export default function StoreCatalogue({ store, categories, products }: StoreCatalogueProps) {
+export default function StoreCatalogue({ store, storeSlug, storeId, categories, products }: StoreCatalogueProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
 
@@ -26,23 +33,25 @@ export default function StoreCatalogue({ store, categories, products }: StoreCat
 
   return (
     <div className="space-y-8">
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl md:text-6xl">
+      {/* Store Hero */}
+      <div className="text-center space-y-3">
+        <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl md:text-6xl">
           {store.name}
         </h1>
-        <p className="text-lg text-gray-500 max-w-2xl mx-auto">
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
           Explore our complete catalogue.
         </p>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between border-b border-gray-200 pb-5">
+      {/* Filters */}
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between border-b border-border pb-5">
         <div className="relative w-full md:w-96">
           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-            <Search className="h-5 w-5 text-gray-400" />
+            <Search className="h-5 w-5 text-muted-foreground" />
           </div>
           <input
             type="text"
-            className="block w-full rounded-md border border-gray-300 bg-white py-2 pl-10 pr-3 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm"
+            className="block w-full rounded-xl border border-input bg-card py-2.5 pl-10 pr-3 focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring text-sm text-foreground placeholder:text-muted-foreground"
             placeholder="Search products..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -50,39 +59,71 @@ export default function StoreCatalogue({ store, categories, products }: StoreCat
         </div>
 
         {categories.length > 0 && (
-          <div className="w-full md:w-auto flex overflow-x-auto gap-2 pb-2 md:pb-0 scrollbar-hide">
+          <div className="w-full flex overflow-x-auto gap-3 pb-4 md:pb-2 scrollbar-hide py-2">
             <button
               onClick={() => setSelectedCategoryId("all")}
-              className={`whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                selectedCategoryId === "all"
-                  ? "bg-gray-900 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              className={`flex-shrink-0 flex flex-col items-center gap-2 group transition-all ${
+                selectedCategoryId === "all" ? "opacity-100" : "opacity-60 hover:opacity-100"
               }`}
             >
-              All Products
+              <div 
+                className={`w-14 h-14 md:w-16 md:h-16 flex items-center justify-center border-2 transition-all ${
+                  selectedCategoryId === "all" 
+                    ? "border-primary bg-primary/5 shadow-md scale-105" 
+                    : "border-border/60 bg-muted/30"
+                } ${store.categoryImageStyle === "rounded" ? "rounded-full" : "rounded-2xl"}`}
+              >
+                <div className="text-[10px] font-black uppercase tracking-tighter text-center px-1">All</div>
+              </div>
+              <span className={`text-[11px] font-bold uppercase tracking-wider ${selectedCategoryId === "all" ? "text-primary" : "text-muted-foreground"}`}>
+                All
+              </span>
             </button>
+
             {categories.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategoryId(cat.id)}
-                className={`whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                  selectedCategoryId === cat.id
-                    ? "bg-gray-900 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                className={`flex-shrink-0 flex flex-col items-center gap-2 group transition-all ${
+                  selectedCategoryId === cat.id ? "opacity-100" : "opacity-60 hover:opacity-100"
                 }`}
               >
-                {cat.name}
+                <div 
+                  className={`w-14 h-14 md:w-16 md:h-16 overflow-hidden border-2 transition-all ${
+                    selectedCategoryId === cat.id 
+                      ? "border-primary bg-primary/5 shadow-md scale-105" 
+                      : "border-border/60 bg-muted/30"
+                  } ${store.categoryImageStyle === "rounded" ? "rounded-full" : "rounded-2xl"}`}
+                >
+                  {store.showCategoryImages && cat.imageUrl ? (
+                    <img 
+                      src={cat.imageUrl} 
+                      alt={cat.name} 
+                      className="w-full h-full object-cover transition-transform group-hover:scale-110"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-primary/5">
+                       <span className="text-[10px] font-black uppercase tracking-tighter text-center px-1 truncate w-full">
+                         {cat.name.substring(0, 3)}
+                       </span>
+                    </div>
+                  )}
+                </div>
+                <span className={`text-[11px] font-bold uppercase tracking-wider truncate max-w-[70px] ${selectedCategoryId === cat.id ? "text-primary" : "text-muted-foreground"}`}>
+                  {cat.name}
+                </span>
               </button>
             ))}
           </div>
         )}
       </div>
 
+      {/* Products Grid */}
       {filteredProducts.length === 0 ? (
         <div className="text-center py-20 px-4">
-          <h3 className="text-lg font-medium text-gray-900">No products found</h3>
-          <p className="mt-2 text-sm text-gray-500">
-            Try adjusting your search or filter to find what you're looking for.
+          <h3 className="text-lg font-medium text-foreground">No products found</h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Try adjusting your search or filter to find what you&apos;re looking for.
           </p>
           {(searchQuery !== "" || selectedCategoryId !== "all") && (
             <button
@@ -90,38 +131,43 @@ export default function StoreCatalogue({ store, categories, products }: StoreCat
                 setSearchQuery("");
                 setSelectedCategoryId("all");
               }}
-              className="mt-4 text-blue-600 hover:text-blue-500 font-medium text-sm"
+              className="mt-4 text-primary hover:opacity-80 font-medium text-sm"
             >
               Clear all filters
             </button>
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-y-10 gap-x-6 sm:grid-cols-3 lg:grid-cols-4 xl:gap-x-8">
+        <div className="grid grid-cols-2 gap-y-8 gap-x-5 sm:grid-cols-3 lg:grid-cols-4 xl:gap-x-7">
           {filteredProducts.map((product) => (
-            <div key={product.id} className="group relative border rounded-xl overflow-hidden hover:shadow-lg transition-transform hover:-translate-y-1 bg-white pb-3 duration-200">
-              <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden bg-gray-50 border-b flex items-center justify-center p-0" style={{ height: '240px' }}>
+            <Link
+              key={product.id}
+              href={`/store/${storeSlug}/product/${product.id}`}
+              className="group relative border border-border rounded-2xl overflow-hidden hover:shadow-lg transition-all hover:-translate-y-1 bg-card duration-200"
+            >
+              <div className="aspect-square w-full overflow-hidden bg-muted/50 border-b border-border flex items-center justify-center">
                 {product.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={product.imageUrl}
                     alt={product.name}
-                    className="h-full w-full object-cover object-center"
+                    className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (
-                  <div className="flex h-full items-center justify-center text-gray-300">
-                    <span className="text-sm border border-gray-200 rounded p-2 bg-gray-100">No Image</span>
+                  <div className="flex h-full items-center justify-center text-muted-foreground">
+                    <span className="text-xs border border-border rounded-lg px-3 py-1.5 bg-muted font-medium">No Image</span>
                   </div>
                 )}
               </div>
-              <div className="mt-4 px-4 flex flex-col sm:flex-row justify-between sm:items-start gap-2">
-                <div>
-                  <h3 className="text-base text-gray-900 font-semibold break-words">
-                    {product.name}
-                  </h3>
-                </div>
-                <p className="text-base font-bold text-gray-900 whitespace-nowrap bg-blue-50 px-2 rounded-md shadow-sm border border-blue-100 inline-block self-start sm:self-auto">${product.price.toFixed(2)}</p>
+              <div className="p-4 flex flex-col gap-1.5">
+                <h3 className="text-sm font-semibold text-foreground break-words group-hover:text-primary transition-colors leading-snug">
+                  {product.name}
+                </h3>
+                <p className="text-base font-bold text-foreground tabular-nums">
+                  ₹{product.price.toFixed(2)}
+                </p>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}

@@ -3,11 +3,20 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import { Plus, Trash2, Edit } from "lucide-react";
+import { 
+  Plus, 
+  Trash2, 
+  Edit, 
+  Tags, 
+  Search, 
+  Folder 
+} from "lucide-react";
+import { ListSkeleton } from "@/components/ui/skeleton";
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchCategories = async () => {
     try {
@@ -27,7 +36,7 @@ export default function CategoriesPage() {
   }, []);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure? This category will be removed and products updated.")) return;
+    if (!confirm("Delete category? Products in this category will become uncategorized.")) return;
     
     try {
       const res = await fetch(`/api/categories/${id}`, { method: "DELETE" });
@@ -39,49 +48,90 @@ export default function CategoriesPage() {
     }
   };
 
+  const filtered = categories.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  if (loading) return <ListSkeleton />;
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Categories</h1>
+       {/* Page Header */}
+       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Categories</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Organize your products into groups for easy browsing.
+          </p>
+        </div>
         <Link 
           href="/dashboard/categories/new" 
-          className="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md hover:bg-primary/90 hover:scale-[1.02] transition-all"
         >
-          <Plus className="h-4 w-4 mr-2" /> Add Category
+          <Plus className="h-4 w-4" /> Add New Category
         </Link>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center p-12"><div className="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full border-t-transparent"></div></div>
-      ) : categories.length === 0 ? (
-        <div className="text-center rounded-lg border-2 border-dashed border-gray-300 p-12">
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No categories</h3>
-          <p className="mt-1 text-sm text-gray-500">Get started by creating a new category.</p>
-          <div className="mt-6">
-            <Link href="/dashboard/categories/new" className="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700">
-              <Plus className="h-4 w-4 mr-2" /> New Category
-            </Link>
+       {/* Filters/Search */}
+       <div className="relative group max-w-md">
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+        <input 
+          type="text"
+          placeholder="Filter categories..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full pl-10 pr-4 py-2.5 bg-white border border-border/80 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+        />
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-dashed border-border text-center px-6">
+          <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center mb-5 text-muted-foreground/40">
+            <Tags className="w-8 h-8" />
           </div>
+          <h3 className="text-lg font-bold text-foreground">No categories found</h3>
+          <p className="text-sm text-muted-foreground mt-1.5 max-w-sm">
+            Categories help keep your store clean and professional.
+          </p>
+          {!searchQuery && (
+            <Link 
+              href="/dashboard/categories/new" 
+              className="mt-6 font-bold text-primary text-sm hover:underline"
+            >
+              Create your first category
+            </Link>
+          )}
         </div>
       ) : (
-        <div className="bg-white shadow overflow-hidden sm:rounded-md border">
-          <ul className="divide-y divide-gray-200">
-            {categories.map((category) => (
-              <li key={category.id} className="p-4 flex items-center justify-between hover:bg-gray-50">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{category.name}</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filtered.map((category) => (
+             <div key={category.id} className="group bg-white p-5 rounded-2xl border border-border/60 hover:border-primary/20 hover:shadow-md transition-all flex items-center justify-between shadow-sm">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center">
+                    <Folder className="w-5 h-5 text-primary/70" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-foreground group-hover:text-primary transition-colors">{category.name}</h3>
+                    <p className="text-xs text-muted-foreground">ID: {category.id.slice(-6).toUpperCase()}</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Link href={`/dashboard/categories/${category.id}/edit`} className="text-gray-400 hover:text-blue-500 p-2">
-                    <Edit className="h-5 w-5" />
+                
+                <div className="flex items-center gap-1.5">
+                   <Link 
+                    href={`/dashboard/categories/${category.id}/edit`} 
+                    className="p-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all"
+                    aria-label="Edit category"
+                  >
+                    <Edit className="h-[18px] w-[18px]" />
                   </Link>
-                  <button onClick={() => handleDelete(category.id)} className="text-gray-400 hover:text-red-500 p-2">
-                    <Trash2 className="h-5 w-5" />
+                  <button 
+                    onClick={() => handleDelete(category.id)} 
+                    className="p-2 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all"
+                    aria-label="Delete category"
+                  >
+                    <Trash2 className="h-[18px] w-[18px]" />
                   </button>
                 </div>
-              </li>
-            ))}
-          </ul>
+             </div>
+          ))}
         </div>
       )}
     </div>

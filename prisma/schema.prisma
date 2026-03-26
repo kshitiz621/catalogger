@@ -17,14 +17,18 @@ model User {
 }
 
 model Store {
-  id         String     @id @default(cuid())
-  name       String
-  slug       String     @unique
-  userId     String
-  user       User       @relation(fields: [userId], references: [id])
-  products   Product[]
-  categories Category[]
-  createdAt  DateTime   @default(now())
+  id              String     @id @default(cuid())
+  name            String
+  slug            String     @unique
+  whatsappNumber  String?
+  userId          String
+  user            User       @relation(fields: [userId], references: [id])
+  products        Product[]
+  categories      Category[]
+  logoUrl             String?
+  showCategoryImages  Boolean    @default(false)
+  categoryImageStyle  String     @default("square") // "square" or "rounded"
+  createdAt           DateTime   @default(now())
 }
 
 model Product {

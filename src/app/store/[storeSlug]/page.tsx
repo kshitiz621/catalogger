@@ -24,14 +24,24 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function StorePage({ params }: PageProps) {
   const { storeSlug } = await params;
 
-  const store = await prisma.store.findUnique({
+  const store = await (prisma as any).store.findUnique({
     where: { slug: storeSlug },
     select: {
       id: true,
       name: true,
       slug: true,
+      showCategoryImages: true,
+      categoryImageStyle: true,
       categories: {
-        select: { id: true, name: true },
+        select: { 
+          id: true, 
+          name: true,
+          products: {
+            select: { imageUrl: true },
+            orderBy: { createdAt: "desc" },
+            take: 1
+          }
+        },
         orderBy: { name: "asc" },
       },
       products: {
@@ -51,15 +61,25 @@ export default async function StorePage({ params }: PageProps) {
     notFound();
   }
 
+  const categoriesWithImages = store.categories.map((cat: any) => ({
+    id: cat.id,
+    name: cat.name,
+    imageUrl: cat.products[0]?.imageUrl || null
+  }));
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center">
-      <main className="flex-1 w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-        <StoreCatalogue 
-          store={{ name: store.name }} 
-          categories={store.categories} 
-          products={store.products} 
-        />
-      </main>
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+      <StoreCatalogue 
+        store={{ 
+          name: store.name,
+          showCategoryImages: store.showCategoryImages,
+          categoryImageStyle: store.categoryImageStyle
+        }} 
+        storeSlug={store.slug}
+        storeId={store.id}
+        categories={categoriesWithImages} 
+        products={store.products} 
+      />
     </div>
   );
 }

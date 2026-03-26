@@ -3,6 +3,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { 
+  Plus, 
+  Trash2, 
+  Edit, 
+  Tags, 
+  Folder, 
+  Save, 
+  X, 
+  Loader2,
+  ChevronRight
+} from "lucide-react";
 
 interface CategoryFormProps {
   initialData?: {
@@ -29,13 +40,13 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name: name.trim() }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || "Something went wrong");
+        throw new Error(data.message || "Failed to save category");
       }
 
       toast.success(initialData ? "Category updated!" : "Category created!");
@@ -49,34 +60,56 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-lg bg-white p-6 rounded-lg shadow border">
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Category Name *</label>
-        <input 
-          type="text" 
-          required 
-          value={name} 
-          onChange={(e) => setName(e.target.value)} 
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border" 
-          placeholder="e.g. Vintage Clocks"
-        />
+    <form onSubmit={handleSubmit} className="space-y-6 max-w-xl animate-in fade-in slide-in-from-bottom-2 duration-500">
+      
+      <div className="bg-white rounded-2xl border border-border/60 shadow-sm p-6 overflow-hidden">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+            <Tags className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-foreground">{initialData ? 'Edit Category' : 'Create New Category'}</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Use categories to group products for customers.</p>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="group">
+            <label htmlFor="cat-name" className="flex items-center gap-2 text-sm font-bold text-foreground mb-2">
+              <Folder className="w-4 h-4 text-emerald-600" />
+              Category Name <span className="text-destructive">*</span>
+            </label>
+            <input 
+              id="cat-name"
+              type="text" 
+              required 
+              autoFocus
+              value={name} 
+              onChange={(e) => setName(e.target.value)} 
+              placeholder="e.g. Menswear, Home Decor, Organic Spices"
+              className="w-full rounded-2xl border border-border/80 bg-secondary/30 px-4 py-3.5 text-sm focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all outline-none font-medium" 
+            />
+          </div>
+        </div>
       </div>
 
-      <div className="flex justify-end gap-3">
+       {/* Footer Actions */}
+       <div className="pt-2 flex items-center justify-end gap-3">
         <button 
           type="button" 
-          onClick={() => router.push('/dashboard/categories')}
-          className="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+          onClick={() => router.back()}
           disabled={loading}
+          className="flex items-center gap-2 px-6 py-2.5 rounded-xl border border-border/80 bg-white font-bold text-xs text-foreground hover:bg-secondary transition-all active:scale-95 disabled:opacity-50"
         >
-          Cancel
+          <X className="w-4 h-4" /> Cancel
         </button>
         <button 
           type="submit" 
           disabled={loading || !name.trim()}
-          className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+          className="flex items-center gap-2 px-8 py-3 rounded-xl bg-primary font-bold text-sm text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/95 hover:scale-[1.02] transition-all active:scale-95 disabled:opacity-50"
         >
-          {loading ? "Saving..." : "Save Category"}
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          {initialData ? "Save Changes" : "Confirm Category"}
         </button>
       </div>
     </form>
