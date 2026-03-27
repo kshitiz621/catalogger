@@ -1,8 +1,35 @@
+import { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, ArrowRight, Package } from "lucide-react";
 import AddToCartButton from "./AddToCartButton";
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { storeSlug, productId } = await params;
+  const [store, product] = await Promise.all([
+    prisma.store.findUnique({
+      where: { slug: storeSlug },
+      select: { name: true, logoUrl: true }
+    }),
+    prisma.product.findUnique({
+      where: { id: productId },
+      select: { name: true }
+    })
+  ]);
+
+  if (!store || !product) {
+    return { title: "Product Not Found" };
+  }
+
+  return { 
+    title: `${product.name} | ${store.name}`,
+    icons: store.logoUrl ? [
+      { rel: "icon", url: store.logoUrl },
+      { rel: "apple-touch-icon", url: store.logoUrl }
+    ] : undefined
+  };
+}
 
 interface PageProps {
   params: Promise<{ storeSlug: string; productId: string }>;
