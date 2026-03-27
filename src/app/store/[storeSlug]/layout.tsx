@@ -13,15 +13,33 @@ export default async function StoreLayout({ children, params }: LayoutProps) {
 
   const store = await prisma.store.findUnique({
     where: { slug: storeSlug },
-    select: { id: true, name: true, slug: true, logoUrl: true },
+    select: { 
+      id: true, 
+      name: true, 
+      slug: true, 
+      logoUrl: true, 
+      themeColor: true,
+      headerCode: true,
+      footerCode: true
+    },
   });
 
   if (!store) {
     notFound();
   }
 
+  const themeColor = store.themeColor || "#E11D48";
+
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div 
+      className="min-h-screen flex flex-col bg-background"
+      style={{ '--primary': themeColor } as React.CSSProperties}
+    >
+      {/* Dynamic Scripts from Settings */}
+      {store.headerCode && (
+        <div dangerouslySetInnerHTML={{ __html: store.headerCode }} />
+      )}
+
       <StoreHeader
         storeName={store.name}
         storeSlug={store.slug}
@@ -37,6 +55,10 @@ export default async function StoreLayout({ children, params }: LayoutProps) {
         storeName={store.name}
         storeSlug={store.slug}
       />
+
+      {store.footerCode && (
+        <div dangerouslySetInnerHTML={{ __html: store.footerCode }} />
+      )}
     </div>
   );
 }

@@ -11,7 +11,18 @@ export async function PUT(req: Request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const { name, slug, whatsappNumber, logoUrl, storeTitle, showCategoryImages, categoryImageStyle } = await req.json();
+    const { 
+      name, 
+      slug, 
+      whatsappNumber, 
+      logoUrl, 
+      storeTitle, 
+      showCategoryImages, 
+      categoryImageStyle,
+      themeColor,
+      headerCode,
+      footerCode
+    } = await req.json();
 
     // --- Validate required fields ---
     if (!name || typeof name !== "string" || name.trim().length === 0) {
@@ -83,6 +94,9 @@ export async function PUT(req: Request) {
         storeTitle: storeTitle || null,
         showCategoryImages: !!showCategoryImages,
         categoryImageStyle: categoryImageStyle || "square",
+        themeColor: themeColor || "#E11D48",
+        headerCode: headerCode || null,
+        footerCode: footerCode || null,
       },
     });
 

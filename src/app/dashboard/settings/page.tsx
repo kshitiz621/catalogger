@@ -23,7 +23,10 @@ export default async function SettingsPage() {
       logoUrl: true,
       storeTitle: true,
       showCategoryImages: true,
-      categoryImageStyle: true
+      categoryImageStyle: true,
+      themeColor: true,
+      headerCode: true,
+      footerCode: true
     }
   });
 
@@ -42,70 +45,34 @@ export default async function SettingsPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-5xl mx-auto pb-20">
       {/* Page Header */}
       <div>
         <div className="flex items-center gap-3 mb-1">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shadow-sm">
             <Settings className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">Settings</h1>
-            <p className="text-sm text-muted-foreground">Manage your store and account preferences.</p>
+            <h1 className="text-2xl font-black text-foreground tracking-tight">Store Management</h1>
+            <p className="text-[13px] font-medium text-muted-foreground">Customize your branding, domains, and global settings.</p>
           </div>
         </div>
       </div>
 
-      {/* Store Settings Card */}
-      <section
-        id="store-settings-section"
-        className="bg-white rounded-2xl border border-border/60 shadow-sm hover:shadow-md transition-shadow duration-300"
-      >
-        <div className="px-6 py-5 border-b border-border/40">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Store className="w-[18px] h-[18px] text-primary" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold text-foreground">Store Settings</h2>
-              <p className="text-sm text-muted-foreground">Update your store name, public URL, and WhatsApp contact.</p>
-            </div>
-          </div>
-        </div>
-        <div className="px-6 py-6">
-          <StoreSettingsForm 
-            initialData={{
-              name: store.name,
-              slug: store.slug,
-              whatsappNumber: store.whatsappNumber,
-              logoUrl: store.logoUrl,
-              showCategoryImages: store.showCategoryImages,
-              categoryImageStyle: store.categoryImageStyle
-            }} 
-          />
-        </div>
-      </section>
-
-      {/* Security Card */}
-      <section
-        id="security-settings-section"
-        className="bg-white rounded-2xl border border-border/60 shadow-sm hover:shadow-md transition-shadow duration-300"
-      >
-        <div className="px-6 py-5 border-b border-border/40">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center">
-              <Shield className="w-[18px] h-[18px] text-amber-600" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold text-foreground">Security</h2>
-              <p className="text-sm text-muted-foreground">Change your account password to keep your account secure.</p>
-            </div>
-          </div>
-        </div>
-        <div className="px-6 py-6">
-          <PasswordChangeForm />
-        </div>
-      </section>
+      <StoreSettingsForm 
+        initialData={{
+          name: store.name,
+          slug: store.slug,
+          whatsappNumber: store.whatsappNumber,
+          logoUrl: store.logoUrl,
+          storeTitle: store.storeTitle,
+          showCategoryImages: store.showCategoryImages,
+          categoryImageStyle: store.categoryImageStyle,
+          themeColor: store.themeColor || "#E11D48",
+          headerCode: store.headerCode,
+          footerCode: store.footerCode
+        }} 
+      />
     </div>
   );
 }

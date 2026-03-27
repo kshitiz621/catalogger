@@ -30,6 +30,9 @@ model Store {
   storeTitle          String?
   showCategoryImages  Boolean    @default(false)
   categoryImageStyle  String     @default("square") // "square" or "rounded"
+  themeColor          String     @default("#E11D48")
+  headerCode          String?
+  footerCode          String?
   createdAt           DateTime   @default(now())
 }
 
