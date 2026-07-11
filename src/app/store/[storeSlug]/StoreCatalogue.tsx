@@ -12,6 +12,11 @@ interface StoreCatalogueProps {
     name: string;
     showCategoryImages?: boolean;
     categoryImageStyle?: string;
+    productsPerRow?: number;
+    fontFamily?: string;
+    fontSize?: string;
+    fontWeight?: string;
+    cardRadius?: string;
   };
   storeSlug: string;
   storeId: string;
@@ -31,8 +36,11 @@ export default function StoreCatalogue({ store, storeSlug, storeId, categories, 
     });
   }, [products, searchQuery, selectedCategoryId]);
 
+  const fontUrl = `https://fonts.googleapis.com/css2?family=${(store.fontFamily || "Inter").replace(/\s+/g, "+")}:wght@300;400;500;600;700;800;900&display=swap`;
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" style={{ fontFamily: `'${store.fontFamily || "Inter"}', sans-serif` }}>
+      <link rel="stylesheet" href={fontUrl} />
       {/* Store Hero */}
       <div className="text-center space-y-3">
         <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl md:text-6xl">
@@ -138,38 +146,82 @@ export default function StoreCatalogue({ store, storeSlug, storeId, categories, 
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-y-8 gap-x-5 sm:grid-cols-3 lg:grid-cols-4 xl:gap-x-7">
-          {filteredProducts.map((product) => (
-            <Link
-              key={product.id}
-              href={`/store/${storeSlug}/product/${product.id}`}
-              className="group relative border border-border rounded-2xl overflow-hidden hover:shadow-lg transition-all hover:-translate-y-1 bg-card duration-200"
-            >
-              <div className="aspect-square w-full overflow-hidden bg-muted/50 border-b border-border flex items-center justify-center">
-                {product.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={product.imageUrl}
-                    alt={product.name}
-                    className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-muted-foreground">
-                    <span className="text-xs border border-border rounded-lg px-3 py-1.5 bg-muted font-medium">No Image</span>
-                  </div>
-                )}
+        <>
+          <style jsx={false}>{`
+            .custom-product-grid {
+              grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            @media (min-width: 640px) {
+              .custom-product-grid {
+                grid-template-columns: repeat(min(3, ${store.productsPerRow || 4}), minmax(0, 1fr));
+              }
+            }
+            @media (min-width: 1024px) {
+              .custom-product-grid {
+                grid-template-columns: repeat(${store.productsPerRow || 4}, minmax(0, 1fr));
+              }
+            }
+          `}</style>
+          {(() => {
+            const sizeClasses = {
+              small: "text-xs md:text-sm",
+              medium: "text-sm md:text-base",
+              large: "text-base md:text-lg"
+            }[store.fontSize || "medium"] || "text-sm md:text-base";
+
+            const weightClasses = {
+              normal: "font-normal",
+              medium: "font-medium",
+              semibold: "font-semibold",
+              bold: "font-bold",
+              black: "font-black"
+            }[store.fontWeight || "semibold"] || "font-semibold";
+
+            const radiusClasses = {
+              none: "rounded-none",
+              sm: "rounded-md",
+              md: "rounded-xl",
+              lg: "rounded-2xl",
+              xl: "rounded-3xl",
+              full: "rounded-[40px]"
+            }[store.cardRadius || "lg"] || "rounded-2xl";
+
+            return (
+              <div className="custom-product-grid grid gap-y-8 gap-x-5 xl:gap-x-7">
+                {filteredProducts.map((product) => (
+                  <Link
+                    key={product.id}
+                    href={`/store/${storeSlug}/product/${product.id}`}
+                    className={`group relative border border-border overflow-hidden hover:shadow-lg transition-all hover:-translate-y-1 bg-card duration-200 ${radiusClasses}`}
+                  >
+                    <div className="aspect-square w-full overflow-hidden bg-muted/50 border-b border-border flex items-center justify-center">
+                      {product.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={product.imageUrl}
+                          alt={product.name}
+                          className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-muted-foreground">
+                          <span className="text-xs border border-border rounded-lg px-3 py-1.5 bg-muted font-medium">No Image</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4 flex flex-col gap-1.5">
+                      <h3 className={`text-foreground break-words group-hover:text-primary transition-colors leading-snug ${sizeClasses} ${weightClasses}`}>
+                        {product.name}
+                      </h3>
+                      <p className="text-base font-bold text-foreground tabular-nums">
+                        ₹{product.price.toFixed(2)}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
               </div>
-              <div className="p-4 flex flex-col gap-1.5">
-                <h3 className="text-sm font-semibold text-foreground break-words group-hover:text-primary transition-colors leading-snug">
-                  {product.name}
-                </h3>
-                <p className="text-base font-bold text-foreground tabular-nums">
-                  ₹{product.price.toFixed(2)}
-                </p>
-              </div>
-            </Link>
-          ))}
-        </div>
+            );
+          })()}
+        </>
       )}
     </div>
   );

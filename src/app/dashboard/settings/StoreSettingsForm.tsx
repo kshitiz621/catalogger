@@ -36,6 +36,11 @@ interface StoreSettingsFormProps {
     themeColor?: string;
     headerCode?: string | null;
     footerCode?: string | null;
+    productsPerRow?: number;
+    fontFamily?: string;
+    fontSize?: string;
+    fontWeight?: string;
+    cardRadius?: string;
   };
 }
 
@@ -57,6 +62,11 @@ export default function StoreSettingsForm({ initialData }: StoreSettingsFormProp
   const [themeColor, setThemeColor] = useState(initialData.themeColor || "#E11D48");
   const [headerCode, setHeaderCode] = useState(initialData.headerCode || "");
   const [footerCode, setFooterCode] = useState(initialData.footerCode || "");
+  const [productsPerRow, setProductsPerRow] = useState(initialData.productsPerRow ?? 4);
+  const [fontFamily, setFontFamily] = useState(initialData.fontFamily || "Inter");
+  const [fontSize, setFontSize] = useState(initialData.fontSize || "medium");
+  const [fontWeight, setFontWeight] = useState(initialData.fontWeight || "semibold");
+  const [cardRadius, setCardRadius] = useState(initialData.cardRadius || "lg");
 
   const hasChanges = 
     name !== initialData.name || 
@@ -68,7 +78,12 @@ export default function StoreSettingsForm({ initialData }: StoreSettingsFormProp
     categoryImageStyle !== (initialData.categoryImageStyle ?? "square") ||
     themeColor !== (initialData.themeColor || "#E11D48") ||
     headerCode !== (initialData.headerCode || "") ||
-    footerCode !== (initialData.footerCode || "");
+    footerCode !== (initialData.footerCode || "") ||
+    productsPerRow !== (initialData.productsPerRow ?? 4) ||
+    fontFamily !== (initialData.fontFamily || "Inter") ||
+    fontSize !== (initialData.fontSize || "medium") ||
+    fontWeight !== (initialData.fontWeight || "semibold") ||
+    cardRadius !== (initialData.cardRadius || "lg");
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -113,7 +128,12 @@ export default function StoreSettingsForm({ initialData }: StoreSettingsFormProp
           categoryImageStyle,
           themeColor,
           headerCode,
-          footerCode
+          footerCode,
+          productsPerRow,
+          fontFamily,
+          fontSize,
+          fontWeight,
+          cardRadius
         }),
       });
 
@@ -360,6 +380,149 @@ export default function StoreSettingsForm({ initialData }: StoreSettingsFormProp
                         </button>
                       </div>
                     )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Product Grid Settings */}
+              <div className="pt-8 border-t border-border/40 space-y-6">
+                <div>
+                  <h3 className="text-sm font-black text-foreground uppercase tracking-widest mb-6">Product Grid Settings</h3>
+                  <div className="max-w-xl space-y-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-bold text-foreground">
+                        Products per Row: <span className="text-primary font-extrabold">{productsPerRow}</span>
+                      </p>
+                      <span className="text-xs text-muted-foreground font-semibold">Range: 2 to 8</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="text-xs font-bold text-muted-foreground">2</span>
+                      <input
+                        id="products-per-row"
+                        type="range"
+                        min="2"
+                        max="8"
+                        step="1"
+                        value={productsPerRow}
+                        onChange={(e) => setProductsPerRow(parseInt(e.target.value, 10))}
+                        className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary focus:outline-none"
+                      />
+                      <span className="text-xs font-bold text-muted-foreground">8</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider leading-relaxed">
+                      Adjust the number of product cards shown in a single row on desktop screens. Increasing columns will reduce card and image sizes.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Typography Settings */}
+              <div className="pt-8 border-t border-border/40 space-y-8">
+                <div>
+                  <h3 className="text-sm font-black text-foreground uppercase tracking-widest mb-6">Typography Settings</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Font Family Dropdown */}
+                    <div className="space-y-3">
+                      <label htmlFor="font-family" className="block text-xs font-black text-foreground uppercase tracking-widest opacity-80">
+                        Font Family
+                      </label>
+                      <select
+                        id="font-family"
+                        value={fontFamily}
+                        onChange={(e) => setFontFamily(e.target.value)}
+                        className="w-full rounded-2xl border-2 border-border/80 bg-white px-4 py-3.5 text-sm font-bold text-foreground focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none shadow-sm cursor-pointer"
+                      >
+                        {["Inter", "Outfit", "Playfair Display", "Plus Jakarta Sans", "Lora", "Montserrat", "Caveat"].map((f) => (
+                          <option key={f} value={f}>{f}</option>
+                        ))}
+                      </select>
+                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                        Active font style for the public store text elements.
+                      </p>
+                    </div>
+
+                    {/* Font Weight Dropdown */}
+                    <div className="space-y-3">
+                      <label htmlFor="font-weight" className="block text-xs font-black text-foreground uppercase tracking-widest opacity-80">
+                        Product Name Font Weight
+                      </label>
+                      <select
+                        id="font-weight"
+                        value={fontWeight}
+                        onChange={(e) => setFontWeight(e.target.value)}
+                        className="w-full rounded-2xl border-2 border-border/80 bg-white px-4 py-3.5 text-sm font-bold text-foreground focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none shadow-sm cursor-pointer"
+                      >
+                        <option value="normal">Normal (400)</option>
+                        <option value="medium">Medium (500)</option>
+                        <option value="semibold">Semibold (600)</option>
+                        <option value="bold">Bold (700)</option>
+                        <option value="black">Heavy (900)</option>
+                      </select>
+                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                        Thickness of the product title text in catalog grids.
+                      </p>
+                    </div>
+
+                    {/* Product Name Size */}
+                    <div className="space-y-3">
+                      <label className="block text-xs font-black text-foreground uppercase tracking-widest opacity-80">
+                        Product Name Font Size
+                      </label>
+                      <div className="flex gap-3">
+                        {["small", "medium", "large"].map((size) => (
+                          <button
+                            key={size}
+                            type="button"
+                            onClick={() => setFontSize(size)}
+                            className={cn(
+                              "flex-1 py-3 text-xs font-bold uppercase tracking-widest border-2 rounded-xl transition-all",
+                              fontSize === size
+                                ? "border-primary bg-primary/5 text-primary shadow-sm"
+                                : "border-border/80 hover:border-border text-muted-foreground bg-white"
+                            )}
+                          >
+                            {size}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                        Adjust product card headings size.
+                      </p>
+                    </div>
+
+                    {/* Card Corner Style */}
+                    <div className="space-y-3">
+                      <label className="block text-xs font-black text-foreground uppercase tracking-widest opacity-80">
+                        Product Card Corners
+                      </label>
+                      <div className="flex flex-wrap gap-2.5">
+                        {[
+                          { id: "none", label: "Square" },
+                          { id: "sm", label: "Soft" },
+                          { id: "md", label: "Medium" },
+                          { id: "lg", label: "Rounded" },
+                          { id: "xl", label: "Extra" },
+                          { id: "full", label: "Full" }
+                        ].map((radiusOpt) => (
+                          <button
+                            key={radiusOpt.id}
+                            type="button"
+                            onClick={() => setCardRadius(radiusOpt.id)}
+                            className={cn(
+                              "px-4 py-3 text-[10px] font-black uppercase tracking-wider border-2 rounded-xl transition-all",
+                              cardRadius === radiusOpt.id
+                                ? "border-primary bg-primary/5 text-primary shadow-sm"
+                                : "border-border/80 hover:border-border text-muted-foreground bg-white"
+                            )}
+                          >
+                            {radiusOpt.label}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                        Set the roundness/shape of the product card boxes.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>

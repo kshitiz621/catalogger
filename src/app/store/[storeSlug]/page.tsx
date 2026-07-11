@@ -40,6 +40,11 @@ export default async function StorePage({ params }: PageProps) {
       slug: true,
       showCategoryImages: true,
       categoryImageStyle: true,
+      productsPerRow: true,
+      fontFamily: true,
+      fontSize: true,
+      fontWeight: true,
+      cardRadius: true,
       categories: {
         select: { 
           id: true, 
@@ -81,7 +86,12 @@ export default async function StorePage({ params }: PageProps) {
         store={{ 
           name: store.name,
           showCategoryImages: store.showCategoryImages,
-          categoryImageStyle: store.categoryImageStyle
+          categoryImageStyle: store.categoryImageStyle,
+          productsPerRow: store.productsPerRow,
+          fontFamily: store.fontFamily,
+          fontSize: store.fontSize,
+          fontWeight: store.fontWeight,
+          cardRadius: store.cardRadius
         }} 
         storeSlug={store.slug}
         storeId={store.id}

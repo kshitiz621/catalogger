@@ -13,7 +13,7 @@ export default async function SettingsPage() {
     redirect("/login");
   }
 
-  const store = await prisma.store.findFirst({
+  const store = await (prisma as any).store.findFirst({
     where: { userId: session.user.id },
     select: { 
       id: true, 
@@ -26,7 +26,12 @@ export default async function SettingsPage() {
       categoryImageStyle: true,
       themeColor: true,
       headerCode: true,
-      footerCode: true
+      footerCode: true,
+      productsPerRow: true,
+      fontFamily: true,
+      fontSize: true,
+      fontWeight: true,
+      cardRadius: true
     }
   });
 
@@ -70,7 +75,12 @@ export default async function SettingsPage() {
           categoryImageStyle: store.categoryImageStyle,
           themeColor: store.themeColor || "#E11D48",
           headerCode: store.headerCode,
-          footerCode: store.footerCode
+          footerCode: store.footerCode,
+          productsPerRow: store.productsPerRow,
+          fontFamily: store.fontFamily,
+          fontSize: store.fontSize,
+          fontWeight: store.fontWeight,
+          cardRadius: store.cardRadius
         }} 
       />
     </div>

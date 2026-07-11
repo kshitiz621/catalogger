@@ -21,8 +21,33 @@ export async function PUT(req: Request) {
       categoryImageStyle,
       themeColor,
       headerCode,
-      footerCode
+      footerCode,
+      productsPerRow,
+      fontFamily,
+      fontSize,
+      fontWeight,
+      cardRadius
     } = await req.json();
+
+    let cleanProductsPerRow = 4;
+    if (productsPerRow !== undefined && productsPerRow !== null) {
+      const parsed = parseInt(String(productsPerRow), 10);
+      if (!isNaN(parsed) && parsed >= 2 && parsed <= 8) {
+        cleanProductsPerRow = parsed;
+      }
+    }
+
+    const allowedFonts = ["Inter", "Outfit", "Playfair Display", "Plus Jakarta Sans", "Lora", "Montserrat", "Caveat"];
+    const cleanFontFamily = allowedFonts.includes(fontFamily) ? fontFamily : "Inter";
+
+    const allowedFontSizes = ["small", "medium", "large"];
+    const cleanFontSize = allowedFontSizes.includes(fontSize) ? fontSize : "medium";
+
+    const allowedFontWeights = ["normal", "medium", "semibold", "bold", "black"];
+    const cleanFontWeight = allowedFontWeights.includes(fontWeight) ? fontWeight : "semibold";
+
+    const allowedRadii = ["none", "sm", "md", "lg", "xl", "full"];
+    const cleanCardRadius = allowedRadii.includes(cardRadius) ? cardRadius : "lg";
 
     // --- Validate required fields ---
     if (!name || typeof name !== "string" || name.trim().length === 0) {
@@ -97,6 +122,11 @@ export async function PUT(req: Request) {
         themeColor: themeColor || "#E11D48",
         headerCode: headerCode || null,
         footerCode: footerCode || null,
+        productsPerRow: cleanProductsPerRow,
+        fontFamily: cleanFontFamily,
+        fontSize: cleanFontSize,
+        fontWeight: cleanFontWeight,
+        cardRadius: cleanCardRadius,
       },
     });
 
