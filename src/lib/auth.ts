@@ -25,11 +25,17 @@ export const authOptions: NextAuthOptions = {
         if (!user || !(await bcrypt.compare(credentials.password, user.password))) {
           return null;
         }
+        
+        if (user.status === "SUSPENDED") {
+          throw new Error("Account suspended");
+        }
 
         return {
           id: user.id,
           email: user.email,
           name: user.name,
+          role: user.role,
+          status: user.status,
         };
       }
     })
@@ -43,14 +49,17 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     session: async ({ session, token }) => {
       if (session?.user) {
-        // @ts-ignore
         session.user.id = token.sub as string;
+        session.user.role = token.role;
+        session.user.status = token.status;
       }
       return session;
     },
     jwt: async ({ user, token }) => {
       if (user) {
         token.sub = user.id;
+        token.role = user.role;
+        token.status = user.status;
       }
       return token;
     }

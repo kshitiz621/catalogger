@@ -39,10 +39,17 @@ export const ProductService = {
    * Create/Update with explicit ownership check
    */
   async upsert(userId: string, productId: string | null, data: any) {
-    const store = await prisma.store.findFirst({ where: { userId } });
+    const store = await prisma.store.findUnique({ where: { userId } });
     if (!store) throw new Error("Unauthorized: Store not found");
 
-    const payload = { ...data, storeId: store.id };
+    const payload = { 
+      name: data.name,
+      price: data.price,
+      description: data.description || null,
+      imageUrl: data.imageUrl || null,
+      categoryId: data.categoryId === "" ? null : (data.categoryId || null),
+      storeId: store.id 
+    };
 
     if (productId) {
       // Check ownership before update
@@ -62,7 +69,7 @@ export const ProductService = {
    * Delete with ownership check
    */
   async delete(userId: string, productId: string) {
-    const store = await prisma.store.findFirst({ where: { userId } });
+    const store = await prisma.store.findUnique({ where: { userId } });
     if (!store) throw new Error("Unauthorized");
 
     const product = await prisma.product.findUnique({ where: { id: productId } });

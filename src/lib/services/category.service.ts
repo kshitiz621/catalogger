@@ -2,29 +2,26 @@ import { prisma } from "@/lib/prisma";
 
 export const CategoryService = {
   /**
-   * List all categories by store ID
+   * Fetch all categories for a store
    */
   async listByStoreId(storeId: string) {
     return prisma.category.findMany({
       where: { storeId },
-      orderBy: { name: "asc" },
-      select: {
-        id: true,
-        name: true,
+      include: {
         _count: {
           select: { products: true }
         }
-      }
+      },
+      orderBy: { createdAt: "desc" }
     });
   },
 
   /**
-   * Get Category by ID (with store check)
+   * Fetch a single category
    */
   async getById(id: string, storeId?: string) {
     const category = await prisma.category.findUnique({
-      where: { id },
-      select: { id: true, name: true, storeId: true }
+      where: { id }
     });
 
     if (storeId && category?.storeId !== storeId) {
@@ -35,10 +32,10 @@ export const CategoryService = {
   },
 
   /**
-   * Create/Update with explicit ownership check
+   * Create or Update with ownership check
    */
   async upsert(userId: string, categoryId: string | null, name: string) {
-    const store = await prisma.store.findFirst({ where: { userId } });
+    const store = await prisma.store.findUnique({ where: { userId } });
     if (!store) throw new Error("Unauthorized");
 
     if (categoryId) {
@@ -60,7 +57,7 @@ export const CategoryService = {
    * Delete with ownership check
    */
   async delete(userId: string, categoryId: string) {
-    const store = await prisma.store.findFirst({ where: { userId } });
+    const store = await prisma.store.findUnique({ where: { userId } });
     if (!store) throw new Error("Unauthorized");
 
     const category = await prisma.category.findUnique({ where: { id: categoryId } });

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
+import { CategorySchema } from "@/lib/schema";
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -10,8 +11,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     if (!session || !session.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
+    if (session.user.role !== "SELLER") {
+      return NextResponse.json({ message: "Forbidden: Seller access required" }, { status: 403 });
+    }
 
-    const store = await prisma.store.findFirst({
+    const store = await prisma.store.findUnique({
       where: { userId: session.user.id },
     });
 
@@ -27,15 +31,16 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
-    const { name } = await req.json();
-
-    if (!name || typeof name !== "string" || name.trim() === "") {
-      return NextResponse.json({ message: "Valid category name is required" }, { status: 400 });
+    const json = await req.json();
+    const result = CategorySchema.safeParse(json);
+    
+    if (!result.success) {
+      return NextResponse.json({ message: result.error.issues[0].message }, { status: 400 });
     }
 
     const updatedCategory = await prisma.category.update({
       where: { id },
-      data: { name: name.trim() },
+      data: { name: result.data.name },
     });
 
     return NextResponse.json(updatedCategory);
@@ -52,8 +57,11 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     if (!session || !session.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
+    if (session.user.role !== "SELLER") {
+      return NextResponse.json({ message: "Forbidden: Seller access required" }, { status: 403 });
+    }
 
-    const store = await prisma.store.findFirst({
+    const store = await prisma.store.findUnique({
       where: { userId: session.user.id },
     });
 

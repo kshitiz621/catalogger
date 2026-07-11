@@ -1,70 +1,40 @@
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { redirect } from "next/navigation";
+import { getStoreSettings } from "@/lib/actions/seller.actions";
 import StoreSettingsForm from "./StoreSettingsForm";
-import PasswordChangeForm from "./PasswordChangeForm";
-import { Settings, Store, Shield, AlertCircle } from "lucide-react";
+import { Settings, AlertCircle } from "lucide-react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 export default async function SettingsPage() {
-  const session = await getServerSession(authOptions);
-
-  if (!session || !session.user?.id) {
-    redirect("/login");
-  }
-
-  const store = await (prisma as any).store.findFirst({
-    where: { userId: session.user.id },
-    select: { 
-      id: true, 
-      name: true, 
-      slug: true, 
-      whatsappNumber: true,
-      logoUrl: true,
-      storeTitle: true,
-      showCategoryImages: true,
-      categoryImageStyle: true,
-      themeColor: true,
-      headerCode: true,
-      footerCode: true,
-      productsPerRow: true,
-      fontFamily: true,
-      fontSize: true,
-      fontWeight: true,
-      cardRadius: true
-    }
-  });
+  const store = await getStoreSettings();
 
   if (!store) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-destructive/10 flex items-center justify-center mb-4">
-          <AlertCircle className="w-7 h-7 text-destructive" />
-        </div>
-        <h3 className="text-lg font-semibold text-foreground">Store Not Found</h3>
-        <p className="mt-1 text-sm text-muted-foreground max-w-sm">
-          No store is associated with your account. Please contact support or create a new store.
-        </p>
+        <Alert variant="destructive" className="max-w-sm">
+          <AlertTitle>Store not found</AlertTitle>
+          <AlertDescription>
+            No store is associated with your account. Please contact support or create a new store.
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto pb-20">
-      {/* Page Header */}
-      <div>
-        <div className="flex items-center gap-3 mb-1">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shadow-sm">
-            <Settings className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-black text-foreground tracking-tight">Store Management</h1>
-            <p className="text-[13px] font-medium text-muted-foreground">Customize your branding, domains, and global settings.</p>
-          </div>
+    <div className="space-y-7 max-w-4xl mx-auto pb-20">
+      {/* Page header */}
+      <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/8 border border-primary/15">
+          <Settings className="h-4 w-4 text-primary" />
+        </div>
+        <div>
+          <h1 className="text-xl font-semibold text-foreground tracking-tight">Store Settings</h1>
+          <p className="text-[13px] text-muted-foreground">
+            Customize your branding, domain, and store configuration.
+          </p>
         </div>
       </div>
 
-      <StoreSettingsForm 
+      <StoreSettingsForm
         initialData={{
           name: store.name,
           slug: store.slug,
@@ -80,8 +50,8 @@ export default async function SettingsPage() {
           fontFamily: store.fontFamily,
           fontSize: store.fontSize,
           fontWeight: store.fontWeight,
-          cardRadius: store.cardRadius
-        }} 
+          cardRadius: store.cardRadius,
+        }}
       />
     </div>
   );

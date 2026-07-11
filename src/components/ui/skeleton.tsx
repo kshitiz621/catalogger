@@ -6,7 +6,10 @@ export function Skeleton({
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("animate-pulse rounded-md bg-muted/60", className)}
+      className={cn(
+        "animate-pulse rounded-lg bg-muted/50",
+        className
+      )}
       {...props}
     />
   );
@@ -14,14 +17,23 @@ export function Skeleton({
 
 export function OverviewSkeleton() {
   return (
-    <div className="space-y-8">
-      <div className="space-y-4">
-         <Skeleton className="h-8 w-48" />
-         <Skeleton className="h-4 w-64" />
+    <div className="space-y-8 animate-pulse">
+      <div className="space-y-3">
+        <Skeleton className="h-8 w-52" />
+        <Skeleton className="h-4 w-72" />
       </div>
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-32 w-full rounded-2xl" />
+          <div key={i} className="rounded-xl border border-border bg-card p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-9 w-9 rounded-lg" />
+              <Skeleton className="h-4 w-4 rounded" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-8 w-16" />
+            </div>
+          </div>
         ))}
       </div>
     </div>
@@ -30,24 +42,28 @@ export function OverviewSkeleton() {
 
 export function ListSkeleton() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-pulse">
       <div className="flex justify-between items-center">
-        <Skeleton className="h-9 w-32" />
-        <Skeleton className="h-10 w-36 rounded-xl" />
+        <div className="space-y-2">
+          <Skeleton className="h-7 w-32" />
+          <Skeleton className="h-4 w-48" />
+        </div>
+        <Skeleton className="h-9 w-36 rounded-lg" />
       </div>
-      <div className="bg-white rounded-2xl border border-border/60 overflow-hidden shadow-sm">
+      <Skeleton className="h-9 w-72 rounded-lg" />
+      <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
         {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="p-5 border-b border-border/40 last:border-0 flex items-center justify-between">
+          <div key={i} className="px-5 py-4 border-b border-border/60 last:border-0 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Skeleton className="h-12 w-12 rounded-xl" />
+              <Skeleton className="h-12 w-12 rounded-lg" />
               <div className="space-y-2">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-3 w-48" />
+                <Skeleton className="h-4 w-36" />
+                <Skeleton className="h-3 w-24" />
               </div>
             </div>
             <div className="flex gap-2">
-              <Skeleton className="h-9 w-9 rounded-lg" />
-              <Skeleton className="h-9 w-9 rounded-lg" />
+              <Skeleton className="h-8 w-8 rounded-lg" />
+              <Skeleton className="h-8 w-8 rounded-lg" />
             </div>
           </div>
         ))}

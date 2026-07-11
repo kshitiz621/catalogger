@@ -7,38 +7,65 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  SUPER_ADMIN
+  SELLER
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum StoreStatus {
+  ACTIVE
+  SUSPENDED
+}
+
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
+  id        String     @id @default(cuid())
+  email     String     @unique
   password  String
   name      String?
-  stores    Store[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  role      Role       @default(SELLER)
+  status    UserStatus @default(ACTIVE)
+  
+  store     Store?     
+  
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 }
 
 model Store {
-  id              String     @id @default(cuid())
-  name            String
-  slug            String     @unique
-  whatsappNumber  String?
-  userId          String
-  user            User       @relation(fields: [userId], references: [id])
-  products        Product[]
-  categories      Category[]
+  id                  String      @id @default(cuid())
+  name                String
+  slug                String      @unique
+  whatsappNumber      String?
+  
+  userId              String      @unique
+  user                User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  status              StoreStatus @default(ACTIVE)
+  
+  products            Product[]
+  categories          Category[]
+  
   logoUrl             String?
   storeTitle          String?
-  showCategoryImages  Boolean    @default(false)
-  categoryImageStyle  String     @default("square") // "square" or "rounded"
-  themeColor          String     @default("#E11D48")
-  productsPerRow      Int        @default(4)
-  fontFamily          String     @default("Inter")
-  fontSize            String     @default("medium")
-  fontWeight          String     @default("semibold")
-  cardRadius          String     @default("lg")
+  showCategoryImages  Boolean     @default(false)
+  categoryImageStyle  String      @default("square")
+  themeColor          String      @default("#E11D48")
+  productsPerRow      Int         @default(4)
+  fontFamily          String      @default("Inter")
+  fontSize            String      @default("medium")
+  fontWeight          String      @default("semibold")
+  cardRadius          String      @default("lg")
   headerCode          String?
   footerCode          String?
-  createdAt           DateTime   @default(now())
+  
+  createdAt           DateTime    @default(now())
+
+  @@index([userId])
 }
 
 model Product {
@@ -47,10 +74,13 @@ model Product {
   price       Float
   description String?
   imageUrl    String?
+  
   storeId     String
-  store       Store     @relation(fields: [storeId], references: [id])
+  store       Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
   categoryId  String?
   category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -61,11 +91,25 @@ model Product {
 model Category {
   id        String    @id @default(cuid())
   name      String
+  
   storeId   String
   store     Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  
   products  Product[]
+  
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-
   @@index([storeId])
+}
+
+model PlatformSettings {
+  id                  String   @id @default("singleton")
+  platformName        String   @default("Catalogger")
+  logoUrl             String?
+  themeColor          String   @default("#000000")
+  supportEmail        String?
+  registrationEnabled Boolean  @default(true)
+  maintenanceMode     Boolean  @default(false)
+  
+  updatedAt           DateTime @updatedAt
 }

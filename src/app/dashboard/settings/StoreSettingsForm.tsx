@@ -3,13 +3,12 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { 
-  Store, 
-  Link as LinkIcon, 
-  MessageSquare, 
-  Save, 
-  Loader2, 
-  AlertCircle,
+import {
+  Store,
+  Link as LinkIcon,
+  MessageSquare,
+  Save,
+  Loader2,
   Hash,
   Upload,
   X,
@@ -18,11 +17,17 @@ import {
   Globe,
   Shield,
   Layout,
-  Code
+  Code,
+  AlertTriangle,
 } from "lucide-react";
+import { updateStoreSettings } from "@/lib/actions/seller.actions";
 import { uploadImage } from "@/lib/upload-utils";
 import PasswordChangeForm from "./PasswordChangeForm";
 import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface StoreSettingsFormProps {
   initialData: {
@@ -47,11 +52,11 @@ interface StoreSettingsFormProps {
 export default function StoreSettingsForm({ initialData }: StoreSettingsFormProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [activeTab, setActiveTab] = useState("general");
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  
+
   const [name, setName] = useState(initialData.name);
   const [slug, setSlug] = useState(initialData.slug);
   const [whatsappNumber, setWhatsappNumber] = useState(initialData.whatsappNumber || "");
@@ -68,9 +73,9 @@ export default function StoreSettingsForm({ initialData }: StoreSettingsFormProp
   const [fontWeight, setFontWeight] = useState(initialData.fontWeight || "semibold");
   const [cardRadius, setCardRadius] = useState(initialData.cardRadius || "lg");
 
-  const hasChanges = 
-    name !== initialData.name || 
-    slug !== initialData.slug || 
+  const hasChanges =
+    name !== initialData.name ||
+    slug !== initialData.slug ||
     whatsappNumber !== (initialData.whatsappNumber || "") ||
     logoUrl !== (initialData.logoUrl || "") ||
     storeTitle !== (initialData.storeTitle || "") ||
@@ -88,59 +93,36 @@ export default function StoreSettingsForm({ initialData }: StoreSettingsFormProp
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setUploading(true);
-    const toastId = toast.loading("Updating brand logo...");
-
+    const toastId = toast.loading("Uploading logo...");
     try {
       const cloudUrl = await uploadImage(file);
       setLogoUrl(cloudUrl);
-      
-      toast.success("Logo uploaded successfully!", { id: toastId });
+      toast.success("Logo uploaded!", { id: toastId });
     } catch (err: any) {
-      toast.error(err.message || "Upload failed. Check .env keys.", { id: toastId });
+      toast.error(err.message || "Upload failed", { id: toastId });
     } finally {
       setUploading(false);
     }
   };
 
   const handleSlugChange = (value: string) => {
-    const formatted = value.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-");
-    setSlug(formatted);
+    setSlug(value.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-"));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!hasChanges) return;
-
     setLoading(true);
     try {
-      const res = await fetch("/api/store", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          name, 
-          slug, 
-          whatsappNumber, 
-          logoUrl, 
-          storeTitle, 
-          showCategoryImages, 
-          categoryImageStyle,
-          themeColor,
-          headerCode,
-          footerCode,
-          productsPerRow,
-          fontFamily,
-          fontSize,
-          fontWeight,
-          cardRadius
-        }),
+      const result = await updateStoreSettings({
+        name, slug, whatsappNumber, logoUrl, storeTitle,
+        showCategoryImages, categoryImageStyle, themeColor,
+        headerCode, footerCode, productsPerRow,
+        fontFamily, fontSize, fontWeight, cardRadius,
       });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to update store");
-
-      toast.success("Store settings updated!");
+      if (result.error) throw new Error(result.error);
+      toast.success("Settings saved!");
       router.refresh();
     } catch (error: any) {
       toast.error(error.message);
@@ -156,181 +138,216 @@ export default function StoreSettingsForm({ initialData }: StoreSettingsFormProp
     { id: "security", label: "Security", icon: Shield },
   ];
 
+  // Shared field label style
+  const fieldLabel = "text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 flex items-center gap-1.5";
+  // Shared section heading style
+  const sectionHeading = "text-[11px] font-semibold uppercase tracking-wider text-muted-foreground pb-3 border-b border-border mb-5";
+
   return (
     <div className="space-y-6">
-      {/* Tabs Layout */}
-      <div className="flex items-center gap-1 p-1 bg-secondary/30 rounded-2xl border border-border/40 w-full overflow-x-auto scrollbar-none">
+      {/* Tab switcher */}
+      <div className="flex items-center gap-1 p-1 bg-secondary/40 rounded-xl border border-border/60 w-full overflow-x-auto scrollbar-none">
         {tabs.map((tab) => (
           <button
             key={tab.id}
+            type="button"
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "flex items-center gap-2 px-6 py-3 text-sm font-bold rounded-xl transition-all whitespace-nowrap whitespace-nowrap",
-              activeTab === tab.id 
-                ? "bg-white text-primary shadow-sm border border-border/40 scale-[1.02]" 
-                : "text-muted-foreground hover:text-foreground hover:bg-white/50"
+              "flex items-center gap-1.5 px-4 py-2 text-[13px] font-medium rounded-lg transition-all whitespace-nowrap",
+              activeTab === tab.id
+                ? "bg-card text-foreground shadow-sm border border-border/60"
+                : "text-muted-foreground hover:text-foreground hover:bg-card/50"
             )}
           >
-            <tab.icon className="w-4 h-4" />
+            <tab.icon className="h-3.5 w-3.5" />
             {tab.label}
           </button>
         ))}
       </div>
 
-      <div className="mt-8 transition-all duration-300">
-        <form onSubmit={handleSubmit} className="space-y-10">
-          {activeTab === "general" && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* GENERAL TAB */}
+        {activeTab === "general" && (
+          <div className="animate-in fade-in slide-in-from-bottom-3 duration-300 space-y-6">
+            <div className="rounded-xl border border-border bg-card shadow-sm p-5 space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {/* Store Name */}
-                <div className="group">
-                  <label htmlFor="store-name" className="flex items-center gap-2 text-xs font-black text-foreground mb-3 uppercase tracking-widest opacity-80">
-                    <Store className="w-4 h-4 text-primary" />
-                    Business Name <span className="text-destructive">*</span>
-                  </label>
-                  <input 
+                <div className="space-y-1.5">
+                  <Label htmlFor="store-name" className={fieldLabel}>
+                    <Store className="h-3.5 w-3.5 text-primary" />
+                    Business Name <span className="text-destructive normal-case tracking-normal font-medium">*</span>
+                  </Label>
+                  <Input
                     id="store-name"
-                    type="text" 
-                    required 
-                    value={name} 
-                    onChange={(e) => setName(e.target.value)} 
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
                     placeholder="Your incredible store name"
-                    className="w-full rounded-2xl border-2 border-border/80 bg-white px-4 py-4 text-base font-bold transition-all focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none shadow-sm" 
                   />
                 </div>
 
                 {/* WhatsApp */}
-                <div className="group">
-                  <label htmlFor="whatsapp" className="flex items-center gap-2 text-xs font-black text-foreground mb-3 uppercase tracking-widest opacity-80">
-                    <MessageSquare className="w-4 h-4 text-[#25D366]" />
-                    WhatsApp Number <span className="text-destructive">*</span>
-                  </label>
-                  <input 
+                <div className="space-y-1.5">
+                  <Label htmlFor="whatsapp" className={fieldLabel}>
+                    <MessageSquare className="h-3.5 w-3.5 text-[#25D366]" />
+                    WhatsApp Number <span className="text-destructive normal-case tracking-normal font-medium">*</span>
+                  </Label>
+                  <Input
                     id="whatsapp"
-                    type="tel" 
-                    required 
-                    value={whatsappNumber} 
-                    onChange={(e) => setWhatsappNumber(e.target.value)} 
+                    type="tel"
+                    required
+                    value={whatsappNumber}
+                    onChange={(e) => setWhatsappNumber(e.target.value)}
                     placeholder="e.g. 919876543210"
-                    className="w-full rounded-2xl border-2 border-border/80 bg-white px-4 py-4 text-sm font-black text-foreground focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all outline-none shadow-sm" 
                   />
                 </div>
               </div>
 
               {/* Store Title */}
-              <div className="group">
-                <label htmlFor="store-title" className="flex items-center gap-2 text-xs font-black text-foreground mb-3 uppercase tracking-widest opacity-80">
-                  <LinkIcon className="w-4 h-4 text-primary" />
+              <div className="space-y-1.5">
+                <Label htmlFor="store-title" className={fieldLabel}>
+                  <LinkIcon className="h-3.5 w-3.5 text-primary" />
                   SEO Page Title
-                </label>
-                <input 
+                </Label>
+                <Input
                   id="store-title"
-                  type="text" 
-                  value={storeTitle} 
-                  onChange={(e) => setStoreTitle(e.target.value)} 
+                  type="text"
+                  value={storeTitle}
+                  onChange={(e) => setStoreTitle(e.target.value)}
                   placeholder="e.g. Best Handmade Crafts | Shop Name"
-                  className="w-full rounded-2xl border-2 border-border/80 bg-white px-4 py-4 text-base font-bold transition-all focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none shadow-sm" 
                 />
-                <p className="mt-2 text-[10px] text-muted-foreground font-medium uppercase tracking-wider">This title appears in browser tabs and search results.</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Appears in browser tabs and search results.
+                </p>
               </div>
+            </div>
 
-              {/* Analytics & Code */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
-                <div className="group">
-                  <label htmlFor="header-code" className="flex items-center gap-2 text-xs font-black text-foreground mb-3 uppercase tracking-widest opacity-80">
-                    <Code className="w-4 h-4 text-indigo-500" />
-                    Header Code (Scripts)
-                  </label>
-                  <textarea 
+            {/* Code injection */}
+            <div className="rounded-xl border border-border bg-card shadow-sm p-5 space-y-5">
+              <p className={sectionHeading}>Analytics & Custom Code</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-1.5">
+                  <Label htmlFor="header-code" className={fieldLabel}>
+                    <Code className="h-3.5 w-3.5 text-info" />
+                    Header Code
+                  </Label>
+                  <textarea
                     id="header-code"
-                    value={headerCode} 
-                    onChange={(e) => setHeaderCode(e.target.value)} 
-                    placeholder="<!-- Add Google Analytics or Facebook Pixel scripts here -->"
-                    className="w-full rounded-2xl border-2 border-border/80 bg-white px-4 py-4 text-sm font-medium transition-all focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none shadow-sm font-mono min-h-[120px]" 
+                    value={headerCode}
+                    onChange={(e) => setHeaderCode(e.target.value)}
+                    placeholder="<!-- Google Analytics or Pixel scripts -->"
+                    className="w-full rounded-lg border border-input bg-secondary/20 px-3 py-2.5 text-[12px] font-mono text-foreground focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/30 transition-all resize-none min-h-[100px]"
                   />
-                  <p className="mt-2 text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Scripts injected in the &lt;head&gt; tag.</p>
+                  <p className="text-[11px] text-muted-foreground">Injected in the &lt;head&gt; tag.</p>
                 </div>
-
-                <div className="group">
-                  <label htmlFor="footer-code" className="flex items-center gap-2 text-xs font-black text-foreground mb-3 uppercase tracking-widest opacity-80">
-                    <Code className="w-4 h-4 text-rose-500" />
-                    Footer Code (Scripts)
-                  </label>
-                  <textarea 
+                <div className="space-y-1.5">
+                  <Label htmlFor="footer-code" className={fieldLabel}>
+                    <Code className="h-3.5 w-3.5 text-destructive" />
+                    Footer Code
+                  </Label>
+                  <textarea
                     id="footer-code"
-                    value={footerCode} 
-                    onChange={(e) => setFooterCode(e.target.value)} 
-                    placeholder="<!-- Custom chat widgets or tracking pixels -->"
-                    className="w-full rounded-2xl border-2 border-border/80 bg-white px-4 py-4 text-sm font-medium transition-all focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none shadow-sm font-mono min-h-[120px]" 
+                    value={footerCode}
+                    onChange={(e) => setFooterCode(e.target.value)}
+                    placeholder="<!-- Chat widgets or tracking pixels -->"
+                    className="w-full rounded-lg border border-input bg-secondary/20 px-3 py-2.5 text-[12px] font-mono text-foreground focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/30 transition-all resize-none min-h-[100px]"
                   />
-                  <p className="mt-2 text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Scripts injected before the closing &lt;/body&gt; tag.</p>
+                  <p className="text-[11px] text-muted-foreground">Injected before &lt;/body&gt;.</p>
                 </div>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {activeTab === "customize" && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-10">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                {/* LOGO */}
-                <div className="lg:col-span-1 space-y-4">
-                  <label className="flex items-center gap-2 text-xs font-black text-foreground uppercase tracking-widest opacity-80">
-                    <ImageIcon className="w-4 h-4 text-primary" />
+        {/* CUSTOMIZE TAB */}
+        {activeTab === "customize" && (
+          <div className="animate-in fade-in slide-in-from-bottom-3 duration-300 space-y-6">
+            {/* Logo + Theme */}
+            <div className="rounded-xl border border-border bg-card shadow-sm p-5">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Logo upload */}
+                <div className="space-y-3">
+                  <Label className={fieldLabel}>
+                    <ImageIcon className="h-3.5 w-3.5 text-primary" />
                     Store Logo
-                  </label>
-                  <div className="group relative aspect-square w-full max-w-[200px] rounded-3xl border-2 border-dashed border-border bg-secondary/10 flex flex-col items-center justify-center p-2 shadow-sm overflow-hidden hover:border-primary transition-all">
+                  </Label>
+                  <div className="group relative aspect-square w-full max-w-[160px] rounded-xl border-2 border-dashed border-border bg-secondary/20 flex flex-col items-center justify-center overflow-hidden hover:border-primary/40 transition-all cursor-pointer">
                     {logoUrl ? (
                       <>
-                        <img src={logoUrl} alt="Logo" className="h-full w-full object-cover rounded-2xl" />
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 backdrop-blur-sm cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                          <Upload className="w-6 h-6 text-white" />
-                          <span className="text-[10px] font-black text-white hover:underline">Change Logo</span>
+                        <img src={logoUrl} alt="Logo" className="h-full w-full object-cover rounded-xl" />
+                        <div
+                          className="absolute inset-0 bg-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          <Upload className="h-5 w-5 text-white" />
+                          <span className="text-[10px] font-semibold text-white">Change</span>
                         </div>
-                        <button type="button" onClick={() => setLogoUrl("")} className="absolute top-2 right-2 p-1.5 bg-destructive text-white rounded-full hover:scale-110 active:scale-95 transition-all"><X className="w-4 h-4" /></button>
+                        <button
+                          type="button"
+                          onClick={() => setLogoUrl("")}
+                          className="absolute top-1.5 right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-white hover:scale-110 transition-transform"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
                       </>
                     ) : (
-                      <div className="flex flex-col items-center justify-center text-center cursor-pointer h-full w-full" onClick={() => fileInputRef.current?.click()}>
-                        <Upload className="w-8 h-8 text-muted-foreground mb-3" />
-                        <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Click to upload</p>
+                      <div
+                        className="flex flex-col items-center justify-center text-center h-full w-full p-3"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <Upload className="h-6 w-6 text-muted-foreground mb-2" />
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                          Click to upload
+                        </p>
                       </div>
                     )}
-                    {uploading && <div className="absolute inset-0 bg-primary/20 backdrop-blur-[2px] flex items-center justify-center"><Loader2 className="w-8 h-8 text-primary animate-spin" /></div>}
+                    {uploading && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-background/70 backdrop-blur-sm">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      </div>
+                    )}
                   </div>
                   <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept="image/*" />
                 </div>
 
-                {/* THEME COLOR */}
-                <div className="lg:col-span-2 space-y-6">
-                  <label className="flex items-center gap-2 text-xs font-black text-foreground uppercase tracking-widest opacity-80">
-                    <Palette className="w-4 h-4 text-primary" />
+                {/* Theme color */}
+                <div className="lg:col-span-2 space-y-3">
+                  <Label className={fieldLabel}>
+                    <Palette className="h-3.5 w-3.5 text-primary" />
                     Theme Brand Color
-                  </label>
-                  <div className="flex flex-wrap gap-4">
-                    <div className="relative w-20 h-20 rounded-2xl border-2 border-border overflow-hidden shadow-sm group">
-                      <input 
-                        type="color" 
-                        value={themeColor} 
+                  </Label>
+                  <div className="flex items-start gap-4">
+                    <div className="relative h-16 w-16 rounded-xl border-2 border-border overflow-hidden shadow-sm shrink-0">
+                      <input
+                        type="color"
+                        value={themeColor}
                         onChange={(e) => setThemeColor(e.target.value)}
-                        className="absolute inset-0 w-full h-full cursor-pointer scale-150"
+                        className="absolute inset-0 h-[200%] w-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer"
                       />
                     </div>
-                    <div className="flex-1 space-y-2">
-                       <input 
-                        type="text" 
-                        value={themeColor} 
+                    <div className="space-y-2 flex-1">
+                      <Input
+                        type="text"
+                        value={themeColor}
                         onChange={(e) => setThemeColor(e.target.value)}
-                        className="w-full max-w-[120px] rounded-xl border-2 border-border/80 bg-white px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" 
+                        className="max-w-[110px] font-mono text-[12px]"
                       />
-                      <p className="text-xs text-muted-foreground font-medium">This color will be used for buttons, icons, and accents across your public store.</p>
-                      <div className="flex items-center gap-2 mt-3">
-                        {['#E11D48', '#2563EB', '#059669', '#7C3AED', '#EA580C', '#000000'].map(c => (
-                          <button 
-                            key={c} 
-                            type="button" 
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">
+                        Used for buttons, links, and accents in your public store.
+                      </p>
+                      <div className="flex items-center gap-2 pt-1">
+                        {["#E11D48", "#2563EB", "#059669", "#7C3AED", "#EA580C", "#25D366", "#000000"].map((c) => (
+                          <button
+                            key={c}
+                            type="button"
                             onClick={() => setThemeColor(c)}
+                            title={c}
                             className={cn(
-                              "w-6 h-6 rounded-lg border border-white ring-2 ring-transparent transition-all",
-                              themeColor === c && "scale-110 ring-primary/40 ring-offset-1"
+                              "h-5 w-5 rounded-md border-2 transition-all ring-offset-1",
+                              themeColor === c
+                                ? "ring-2 ring-primary/50 scale-110 border-transparent"
+                                : "border-border/50 hover:scale-105"
                             )}
                             style={{ backgroundColor: c }}
                           />
@@ -340,274 +357,261 @@ export default function StoreSettingsForm({ initialData }: StoreSettingsFormProp
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Category Display */}
-              <div className="pt-8 border-t border-border/40 space-y-6">
-                <div>
-                  <h3 className="text-sm font-black text-foreground uppercase tracking-widest mb-6">Gallery Settings</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="flex items-center justify-between p-5 rounded-2xl border-2 border-border/60 bg-secondary/5">
-                      <div className="space-y-1">
-                        <p className="text-sm font-bold text-foreground">Show Category Images</p>
-                        <p className="text-[11px] text-muted-foreground">Display visual icons for your product categories.</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setShowCategoryImages(!showCategoryImages)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${showCategoryImages ? 'bg-primary' : 'bg-muted'}`}
-                      >
-                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showCategoryImages ? 'translate-x-6' : 'translate-x-1'}`} />
-                      </button>
-                    </div>
-
-                    {showCategoryImages && (
-                      <div className="flex gap-4">
-                        <button
-                          type="button"
-                          onClick={() => setCategoryImageStyle("square")}
-                          className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${categoryImageStyle === "square" ? "border-primary bg-primary/5 shadow-sm" : "border-border/60 hover:border-border bg-white"}`}
-                        >
-                          <div className="w-10 h-10 bg-muted rounded-md border-2 border-border/40" />
-                          <span className="text-[10px] font-black uppercase tracking-widest">Square</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setCategoryImageStyle("rounded")}
-                          className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${categoryImageStyle === "rounded" ? "border-primary bg-primary/5 shadow-sm" : "border-border/60 hover:border-border bg-white"}`}
-                        >
-                          <div className="w-10 h-10 bg-muted rounded-full border-2 border-border/40" />
-                          <span className="text-[10px] font-black uppercase tracking-widest">Rounded</span>
-                        </button>
-                      </div>
+            {/* Gallery settings */}
+            <div className="rounded-xl border border-border bg-card shadow-sm p-5 space-y-5">
+              <p className={sectionHeading}>Gallery Settings</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex items-center justify-between rounded-lg border border-border bg-secondary/20 p-4">
+                  <div className="space-y-0.5">
+                    <p className="text-[13px] font-medium text-foreground">Show Category Images</p>
+                    <p className="text-[11px] text-muted-foreground">Display visual icons for categories.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowCategoryImages(!showCategoryImages)}
+                    className={cn(
+                      "relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary/40 focus:ring-offset-1",
+                      showCategoryImages ? "bg-primary" : "bg-muted"
                     )}
-                  </div>
+                  >
+                    <span className={cn(
+                      "inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform",
+                      showCategoryImages ? "translate-x-4" : "translate-x-0.5"
+                    )} />
+                  </button>
                 </div>
-              </div>
 
-              {/* Product Grid Settings */}
-              <div className="pt-8 border-t border-border/40 space-y-6">
-                <div>
-                  <h3 className="text-sm font-black text-foreground uppercase tracking-widest mb-6">Product Grid Settings</h3>
-                  <div className="max-w-xl space-y-4">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-bold text-foreground">
-                        Products per Row: <span className="text-primary font-extrabold">{productsPerRow}</span>
-                      </p>
-                      <span className="text-xs text-muted-foreground font-semibold">Range: 2 to 8</span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <span className="text-xs font-bold text-muted-foreground">2</span>
-                      <input
-                        id="products-per-row"
-                        type="range"
-                        min="2"
-                        max="8"
-                        step="1"
-                        value={productsPerRow}
-                        onChange={(e) => setProductsPerRow(parseInt(e.target.value, 10))}
-                        className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary focus:outline-none"
-                      />
-                      <span className="text-xs font-bold text-muted-foreground">8</span>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider leading-relaxed">
-                      Adjust the number of product cards shown in a single row on desktop screens. Increasing columns will reduce card and image sizes.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Typography Settings */}
-              <div className="pt-8 border-t border-border/40 space-y-8">
-                <div>
-                  <h3 className="text-sm font-black text-foreground uppercase tracking-widest mb-6">Typography Settings</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* Font Family Dropdown */}
-                    <div className="space-y-3">
-                      <label htmlFor="font-family" className="block text-xs font-black text-foreground uppercase tracking-widest opacity-80">
-                        Font Family
-                      </label>
-                      <select
-                        id="font-family"
-                        value={fontFamily}
-                        onChange={(e) => setFontFamily(e.target.value)}
-                        className="w-full rounded-2xl border-2 border-border/80 bg-white px-4 py-3.5 text-sm font-bold text-foreground focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none shadow-sm cursor-pointer"
+                {showCategoryImages && (
+                  <div className="flex gap-3">
+                    {(["square", "rounded"] as const).map((style) => (
+                      <button
+                        key={style}
+                        type="button"
+                        onClick={() => setCategoryImageStyle(style)}
+                        className={cn(
+                          "flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
+                          categoryImageStyle === style
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-border/80 bg-card"
+                        )}
                       >
-                        {["Inter", "Outfit", "Playfair Display", "Plus Jakarta Sans", "Lora", "Montserrat", "Caveat"].map((f) => (
-                          <option key={f} value={f}>{f}</option>
-                        ))}
-                      </select>
-                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
-                        Active font style for the public store text elements.
-                      </p>
-                    </div>
-
-                    {/* Font Weight Dropdown */}
-                    <div className="space-y-3">
-                      <label htmlFor="font-weight" className="block text-xs font-black text-foreground uppercase tracking-widest opacity-80">
-                        Product Name Font Weight
-                      </label>
-                      <select
-                        id="font-weight"
-                        value={fontWeight}
-                        onChange={(e) => setFontWeight(e.target.value)}
-                        className="w-full rounded-2xl border-2 border-border/80 bg-white px-4 py-3.5 text-sm font-bold text-foreground focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none shadow-sm cursor-pointer"
-                      >
-                        <option value="normal">Normal (400)</option>
-                        <option value="medium">Medium (500)</option>
-                        <option value="semibold">Semibold (600)</option>
-                        <option value="bold">Bold (700)</option>
-                        <option value="black">Heavy (900)</option>
-                      </select>
-                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
-                        Thickness of the product title text in catalog grids.
-                      </p>
-                    </div>
-
-                    {/* Product Name Size */}
-                    <div className="space-y-3">
-                      <label className="block text-xs font-black text-foreground uppercase tracking-widest opacity-80">
-                        Product Name Font Size
-                      </label>
-                      <div className="flex gap-3">
-                        {["small", "medium", "large"].map((size) => (
-                          <button
-                            key={size}
-                            type="button"
-                            onClick={() => setFontSize(size)}
-                            className={cn(
-                              "flex-1 py-3 text-xs font-bold uppercase tracking-widest border-2 rounded-xl transition-all",
-                              fontSize === size
-                                ? "border-primary bg-primary/5 text-primary shadow-sm"
-                                : "border-border/80 hover:border-border text-muted-foreground bg-white"
-                            )}
-                          >
-                            {size}
-                          </button>
-                        ))}
-                      </div>
-                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
-                        Adjust product card headings size.
-                      </p>
-                    </div>
-
-                    {/* Card Corner Style */}
-                    <div className="space-y-3">
-                      <label className="block text-xs font-black text-foreground uppercase tracking-widest opacity-80">
-                        Product Card Corners
-                      </label>
-                      <div className="flex flex-wrap gap-2.5">
-                        {[
-                          { id: "none", label: "Square" },
-                          { id: "sm", label: "Soft" },
-                          { id: "md", label: "Medium" },
-                          { id: "lg", label: "Rounded" },
-                          { id: "xl", label: "Extra" },
-                          { id: "full", label: "Full" }
-                        ].map((radiusOpt) => (
-                          <button
-                            key={radiusOpt.id}
-                            type="button"
-                            onClick={() => setCardRadius(radiusOpt.id)}
-                            className={cn(
-                              "px-4 py-3 text-[10px] font-black uppercase tracking-wider border-2 rounded-xl transition-all",
-                              cardRadius === radiusOpt.id
-                                ? "border-primary bg-primary/5 text-primary shadow-sm"
-                                : "border-border/80 hover:border-border text-muted-foreground bg-white"
-                            )}
-                          >
-                            {radiusOpt.label}
-                          </button>
-                        ))}
-                      </div>
-                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
-                        Set the roundness/shape of the product card boxes.
-                      </p>
-                    </div>
+                        <div className={cn("h-9 w-9 bg-muted border-2 border-border/40", style === "rounded" ? "rounded-full" : "rounded-lg")} />
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          {style === "square" ? "Square" : "Rounded"}
+                        </span>
+                      </button>
+                    ))}
                   </div>
-                </div>
+                )}
               </div>
             </div>
-          )}
 
-          {activeTab === "domain" && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-2xl bg-white p-8 rounded-3xl border border-border/60 shadow-sm">
-              <div className="space-y-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shadow-sm">
-                    <Globe className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-black text-foreground tracking-tight">Store URL & Domain</h2>
-                    <p className="text-xs text-muted-foreground font-medium">Control the public address of your online store.</p>
-                  </div>
-                </div>
-                
-                <div className="pt-4 group">
-                  <label htmlFor="store-slug" className="flex items-center gap-2 text-xs font-black text-foreground mb-4 uppercase tracking-widest opacity-80">
-                    <Hash className="w-4 h-4 text-emerald-600" />
-                    Public Name (Slug) <span className="text-destructive">*</span>
-                  </label>
-                  <div className="relative">
-                    <input 
-                      id="store-slug"
-                      type="text" 
-                      required 
-                      value={slug} 
-                      onChange={(e) => handleSlugChange(e.target.value)} 
-                      placeholder="my-store"
-                      className="w-full rounded-2xl border-2 border-border/80 bg-white px-6 py-5 text-xl font-black text-foreground focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all outline-none shadow-sm" 
-                    />
-                    <div className="mt-4 px-4 py-3 rounded-xl bg-emerald-50/50 border border-emerald-100 inline-flex items-center gap-2">
-                       <span className="text-xs font-black uppercase text-emerald-700 tracking-widest">Public Link:</span>
-                       <span className="text-sm font-bold text-emerald-600">catalogger.com/store/{slug || '...'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-100 flex gap-3 shadow-inner">
-                  <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" />
-                  <p className="text-[11px] text-amber-800 font-medium leading-relaxed uppercase tracking-tighter">
-                    Changing your slug will immediately break any old links shared on social media or with customers.
+            {/* Product Grid */}
+            <div className="rounded-xl border border-border bg-card shadow-sm p-5 space-y-5">
+              <p className={sectionHeading}>Product Grid</p>
+              <div className="max-w-md space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-[13px] font-medium text-foreground">
+                    Products per row: <span className="font-bold text-primary">{productsPerRow}</span>
                   </p>
+                  <span className="text-[11px] text-muted-foreground">2 – 8</span>
+                </div>
+                <input
+                  id="products-per-row"
+                  type="range" min="2" max="8" step="1"
+                  value={productsPerRow}
+                  onChange={(e) => setProductsPerRow(parseInt(e.target.value, 10))}
+                  className="w-full h-1.5 bg-secondary rounded-full appearance-none cursor-pointer accent-primary"
+                />
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Number of product cards in a single row on desktop.
+                </p>
+              </div>
+            </div>
+
+            {/* Typography */}
+            <div className="rounded-xl border border-border bg-card shadow-sm p-5 space-y-5">
+              <p className={sectionHeading}>Typography & Card Style</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* Font Family */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="font-family" className={fieldLabel}>Font Family</Label>
+                  <div className="relative">
+                    <select
+                      id="font-family"
+                      value={fontFamily}
+                      onChange={(e) => setFontFamily(e.target.value)}
+                      className="h-9 w-full appearance-none rounded-lg border border-input bg-card px-3 pr-8 text-[13px] text-foreground focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/30 transition-all cursor-pointer"
+                    >
+                      {["Inter", "Outfit", "Playfair Display", "Plus Jakarta Sans", "Lora", "Montserrat", "Caveat"].map((f) => (
+                        <option key={f} value={f}>{f}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Font Weight */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="font-weight" className={fieldLabel}>Product Name Weight</Label>
+                  <div className="relative">
+                    <select
+                      id="font-weight"
+                      value={fontWeight}
+                      onChange={(e) => setFontWeight(e.target.value)}
+                      className="h-9 w-full appearance-none rounded-lg border border-input bg-card px-3 pr-8 text-[13px] text-foreground focus:outline-none focus:border-ring focus:ring-2 focus:ring-ring/30 transition-all cursor-pointer"
+                    >
+                      <option value="normal">Normal (400)</option>
+                      <option value="medium">Medium (500)</option>
+                      <option value="semibold">Semibold (600)</option>
+                      <option value="bold">Bold (700)</option>
+                      <option value="black">Heavy (900)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Font Size */}
+                <div className="space-y-1.5">
+                  <Label className={fieldLabel}>Product Name Size</Label>
+                  <div className="flex gap-2">
+                    {(["small", "medium", "large"] as const).map((size) => (
+                      <button
+                        key={size}
+                        type="button"
+                        onClick={() => setFontSize(size)}
+                        className={cn(
+                          "flex-1 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-lg border-2 transition-all",
+                          fontSize === size
+                            ? "border-primary bg-primary/5 text-primary"
+                            : "border-border text-muted-foreground hover:border-border/80 bg-card"
+                        )}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Card corners */}
+                <div className="space-y-1.5">
+                  <Label className={fieldLabel}>Card Corners</Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { id: "none", label: "Square" },
+                      { id: "sm", label: "Soft" },
+                      { id: "md", label: "Medium" },
+                      { id: "lg", label: "Rounded" },
+                      { id: "xl", label: "Extra" },
+                      { id: "full", label: "Full" },
+                    ].map((opt) => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setCardRadius(opt.id)}
+                        className={cn(
+                          "px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider rounded-lg border-2 transition-all",
+                          cardRadius === opt.id
+                            ? "border-primary bg-primary/5 text-primary"
+                            : "border-border text-muted-foreground hover:border-border/80 bg-card"
+                        )}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {activeTab === "security" && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-2xl bg-white p-8 rounded-3xl border border-border/60 shadow-sm">
-               <div className="space-y-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100 shadow-sm">
-                    <Shield className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-black text-foreground tracking-tight">Security & Password</h2>
-                    <p className="text-xs text-muted-foreground font-medium">Keep your dashboard account safe and secure.</p>
-                  </div>
+        {/* DOMAIN TAB */}
+        {activeTab === "domain" && (
+          <div className="animate-in fade-in slide-in-from-bottom-3 duration-300 max-w-xl">
+            <div className="rounded-xl border border-border bg-card shadow-sm p-5 space-y-5">
+              {/* Section header */}
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-success-bg border border-success-border">
+                  <Globe className="h-4 w-4 text-success" />
                 </div>
-                
-                <div className="pt-6">
-                   <PasswordChangeForm />
+                <div>
+                  <h2 className="text-[15px] font-semibold text-foreground">Store URL & Domain</h2>
+                  <p className="text-[12px] text-muted-foreground">Control the public address of your store.</p>
                 </div>
               </div>
-            </div>
-          )}
 
-          {activeTab !== "security" && (
-            <div className="pt-10 flex justify-end sticky bottom-6 z-10">
-              <button 
-                type="submit" 
-                disabled={loading || !hasChanges || uploading}
-                className="flex items-center gap-2.5 px-12 py-5 rounded-2xl bg-primary font-black text-sm text-primary-foreground uppercase tracking-widest shadow-2xl shadow-primary/40 hover:bg-primary/95 hover:scale-[1.02] transition-all active:scale-95 disabled:opacity-30 disabled:hover:scale-100 disabled:cursor-not-allowed group"
-              >
-                {loading ? <Loader2 className="w-5 h-5 animate-spin text-white text-white" /> : <Save className="w-5 h-5 group-hover:rotate-12 transition-transform" />}
-                {loading ? "Updating Store..." : "Save All Changes"}
-              </button>
+              {/* Slug input */}
+              <div className="space-y-1.5">
+                <Label htmlFor="store-slug" className={fieldLabel}>
+                  <Hash className="h-3.5 w-3.5 text-success" />
+                  Public Name (Slug) <span className="text-destructive normal-case tracking-normal font-medium">*</span>
+                </Label>
+                <Input
+                  id="store-slug"
+                  type="text"
+                  required
+                  value={slug}
+                  onChange={(e) => handleSlugChange(e.target.value)}
+                  placeholder="my-store"
+                  className="font-mono"
+                />
+                <div className="flex items-center gap-1.5 mt-2 rounded-lg border border-success-border bg-success-bg px-3 py-2">
+                  <span className="text-[11px] font-semibold text-success uppercase tracking-wider">Live URL:</span>
+                  <span className="text-[12px] font-medium text-success">
+                    catalogger.com/store/{slug || "..."}
+                  </span>
+                </div>
+              </div>
+
+              {/* Warning */}
+              <Alert variant="warning" icon={<AlertTriangle className="h-4 w-4" />}>
+                <AlertDescription>
+                  Changing your slug will immediately break any links previously shared with customers.
+                </AlertDescription>
+              </Alert>
             </div>
-          )}
-        </form>
-      </div>
+          </div>
+        )}
+
+        {/* SECURITY TAB */}
+        {activeTab === "security" && (
+          <div className="animate-in fade-in slide-in-from-bottom-3 duration-300 max-w-xl">
+            <div className="rounded-xl border border-border bg-card shadow-sm p-5 space-y-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-warning-bg border border-warning-border">
+                  <Shield className="h-4 w-4 text-warning" />
+                </div>
+                <div>
+                  <h2 className="text-[15px] font-semibold text-foreground">Security & Password</h2>
+                  <p className="text-[12px] text-muted-foreground">Keep your dashboard account secure.</p>
+                </div>
+              </div>
+              <div className="pt-2">
+                <PasswordChangeForm />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Save button (not for security) */}
+        {activeTab !== "security" && (
+          <div className="flex justify-end sticky bottom-5 z-10">
+            <Button
+              type="submit"
+              disabled={loading || !hasChanges || uploading}
+              size="default"
+              className="shadow-lg"
+            >
+              {loading ? (
+                <><Loader2 className="h-4 w-4 animate-spin" />Saving…</>
+              ) : (
+                <><Save className="h-4 w-4" />Save Changes</>
+              )}
+            </Button>
+          </div>
+        )}
+      </form>
     </div>
   );
 }

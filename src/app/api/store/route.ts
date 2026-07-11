@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
+import { StoreUpdateSchema } from "@/lib/schema";
 
 export async function PUT(req: Request) {
   try {
@@ -10,85 +11,25 @@ export async function PUT(req: Request) {
     if (!session || !session.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
-
-    const { 
-      name, 
-      slug, 
-      whatsappNumber, 
-      logoUrl, 
-      storeTitle, 
-      showCategoryImages, 
-      categoryImageStyle,
-      themeColor,
-      headerCode,
-      footerCode,
-      productsPerRow,
-      fontFamily,
-      fontSize,
-      fontWeight,
-      cardRadius
-    } = await req.json();
-
-    let cleanProductsPerRow = 4;
-    if (productsPerRow !== undefined && productsPerRow !== null) {
-      const parsed = parseInt(String(productsPerRow), 10);
-      if (!isNaN(parsed) && parsed >= 2 && parsed <= 8) {
-        cleanProductsPerRow = parsed;
-      }
+    
+    if (session.user.role !== "SELLER") {
+      return NextResponse.json({ message: "Forbidden: Seller access required" }, { status: 403 });
     }
 
-    const allowedFonts = ["Inter", "Outfit", "Playfair Display", "Plus Jakarta Sans", "Lora", "Montserrat", "Caveat"];
-    const cleanFontFamily = allowedFonts.includes(fontFamily) ? fontFamily : "Inter";
+    const json = await req.json();
+    const result = StoreUpdateSchema.safeParse(json);
 
-    const allowedFontSizes = ["small", "medium", "large"];
-    const cleanFontSize = allowedFontSizes.includes(fontSize) ? fontSize : "medium";
-
-    const allowedFontWeights = ["normal", "medium", "semibold", "bold", "black"];
-    const cleanFontWeight = allowedFontWeights.includes(fontWeight) ? fontWeight : "semibold";
-
-    const allowedRadii = ["none", "sm", "md", "lg", "xl", "full"];
-    const cleanCardRadius = allowedRadii.includes(cardRadius) ? cardRadius : "lg";
-
-    // --- Validate required fields ---
-    if (!name || typeof name !== "string" || name.trim().length === 0) {
-      return NextResponse.json({ message: "Store name is required" }, { status: 400 });
-    }
-
-    if (!slug || typeof slug !== "string" || slug.trim().length === 0) {
-      return NextResponse.json({ message: "Store slug is required" }, { status: 400 });
-    }
-
-    // --- Validate slug format (lowercase alphanumeric + hyphens only) ---
-    const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-    const cleanSlug = slug.trim().toLowerCase();
-    if (!slugRegex.test(cleanSlug)) {
+    if (!result.success) {
       return NextResponse.json(
-        { message: "Slug must contain only lowercase letters, numbers, and hyphens. It cannot start or end with a hyphen." },
+        { message: result.error.issues[0].message },
         { status: 400 }
       );
     }
 
-    if (cleanSlug.length < 3) {
-      return NextResponse.json({ message: "Slug must be at least 3 characters long" }, { status: 400 });
-    }
-
-    if (cleanSlug.length > 48) {
-      return NextResponse.json({ message: "Slug must be 48 characters or fewer" }, { status: 400 });
-    }
-
-    // --- Validate WhatsApp number ---
-    if (whatsappNumber !== undefined && whatsappNumber !== null && whatsappNumber !== "") {
-      const cleanNumber = String(whatsappNumber).replace(/\D/g, "");
-      if (cleanNumber.length < 10 || cleanNumber.length > 15) {
-        return NextResponse.json(
-          { message: "WhatsApp number must be between 10 and 15 digits (with country code, e.g. 919876543210)" },
-          { status: 400 }
-        );
-      }
-    }
+    const data = result.data;
 
     // --- Verify ownership ---
-    const userStore = await prisma.store.findFirst({
+    const userStore = await prisma.store.findUnique({
       where: { userId: session.user.id },
     });
 
@@ -98,7 +39,7 @@ export async function PUT(req: Request) {
 
     // --- Check slug uniqueness (exclude current store) ---
     const existingStore = await prisma.store.findUnique({
-      where: { slug: cleanSlug },
+      where: { slug: data.slug },
     });
 
     if (existingStore && existingStore.id !== userStore.id) {
@@ -109,24 +50,24 @@ export async function PUT(req: Request) {
     }
 
     // --- Update ---
-    const updatedStore = await (prisma as any).store.update({
+    const updatedStore = await prisma.store.update({
       where: { id: userStore.id },
       data: {
-        name: name.trim(),
-        slug: cleanSlug,
-        whatsappNumber: whatsappNumber ? String(whatsappNumber).replace(/\D/g, "") : null,
-        logoUrl: logoUrl || null,
-        storeTitle: storeTitle || null,
-        showCategoryImages: !!showCategoryImages,
-        categoryImageStyle: categoryImageStyle || "square",
-        themeColor: themeColor || "#E11D48",
-        headerCode: headerCode || null,
-        footerCode: footerCode || null,
-        productsPerRow: cleanProductsPerRow,
-        fontFamily: cleanFontFamily,
-        fontSize: cleanFontSize,
-        fontWeight: cleanFontWeight,
-        cardRadius: cleanCardRadius,
+        name: data.name,
+        slug: data.slug,
+        whatsappNumber: data.whatsappNumber,
+        logoUrl: data.logoUrl,
+        storeTitle: data.storeTitle,
+        showCategoryImages: data.showCategoryImages,
+        categoryImageStyle: data.categoryImageStyle,
+        themeColor: data.themeColor,
+        headerCode: data.headerCode,
+        footerCode: data.footerCode,
+        productsPerRow: data.productsPerRow,
+        fontFamily: data.fontFamily,
+        fontSize: data.fontSize,
+        fontWeight: data.fontWeight,
+        cardRadius: data.cardRadius,
       },
     });
 

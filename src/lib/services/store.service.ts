@@ -6,7 +6,7 @@ export const StoreService = {
    */
   async getByUserId(userId: string) {
     if (!userId) return null;
-    return prisma.store.findFirst({
+    return prisma.store.findUnique({
       where: { userId },
       select: {
         id: true,
@@ -43,19 +43,16 @@ export const StoreService = {
    * Update store settings with ownership check
    */
   async update(userId: string, data: { name: string; slug: string; whatsappNumber: string }) {
-    const store = await prisma.store.findFirst({ where: { userId } });
+    const store = await prisma.store.findUnique({ where: { userId } });
     
     if (!store) throw new Error("Store not found");
 
     // Check if slug is taken by another store
-    const existing = await prisma.store.findFirst({
-      where: { 
-        slug: data.slug,
-        NOT: { id: store.id }
-      }
+    const existing = await prisma.store.findUnique({
+      where: { slug: data.slug }
     });
 
-    if (existing) throw new Error("Slug is already taken");
+    if (existing && existing.id !== store.id) throw new Error("Slug is already taken");
 
     return prisma.store.update({
       where: { id: store.id },
