@@ -62,8 +62,10 @@ model Store {
   cardRadius          String      @default("lg")
   headerCode          String?
   footerCode          String?
-  
   createdAt           DateTime    @default(now())
+  
+  onboardingCompleted Boolean     @default(false)
+  onboardingStep      Int         @default(0)
 
   @@index([userId])
 }

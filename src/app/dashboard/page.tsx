@@ -15,6 +15,7 @@ import {
   MessageCircle
 } from "lucide-react";
 import StoreLinkCard from "./StoreLinkCard";
+import OnboardingChecklist from "./OnboardingChecklist";
 import { getDashboardMetrics } from "@/lib/actions/seller.actions";
 
 export default async function DashboardPage() {
@@ -84,6 +85,11 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
+      
+      {!store.onboardingCompleted && (
+        <OnboardingChecklist store={store} />
+      )}
+
       {/* Page header */}
       <div>
         <h1 className="text-2xl font-semibold text-foreground tracking-tight">

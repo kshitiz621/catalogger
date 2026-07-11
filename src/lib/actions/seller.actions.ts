@@ -79,6 +79,25 @@ export async function deleteProduct(id: string) {
 }
 
 // -----------------------------------------------------------------------------
+// Onboarding
+// -----------------------------------------------------------------------------
+
+export async function updateOnboardingProgress(step: number, completed: boolean = false) {
+  const { store } = await getSellerContext();
+  
+  await prisma.store.update({
+    where: { id: store.id },
+    data: {
+      onboardingStep: step,
+      ...(completed && { onboardingCompleted: true })
+    }
+  });
+
+  revalidatePath("/dashboard");
+  return { success: true };
+}
+
+// -----------------------------------------------------------------------------
 // Categories
 // -----------------------------------------------------------------------------
 

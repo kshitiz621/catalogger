@@ -1,21 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { SignupSchema } from "@/lib/schema";
 
 export async function POST(req: Request) {
   try {
-    const json = await req.json();
-    const result = SignupSchema.safeParse(json);
+    const { email, password, name, businessName, whatsappNumber, storeSlug } = await req.json();
 
-    if (!result.success) {
-      return NextResponse.json(
-        { message: result.error.issues[0].message },
-        { status: 400 }
-      );
+    if (!email || !password || !name || !businessName || !storeSlug) {
+      return NextResponse.json({ message: "All required fields must be provided" }, { status: 400 });
     }
-
-    const { email, password, name } = result.data;
 
     const existingUser = await prisma.user.findUnique({
       where: { email },
@@ -23,6 +16,14 @@ export async function POST(req: Request) {
 
     if (existingUser) {
       return NextResponse.json({ message: "User already exists" }, { status: 400 });
+    }
+
+    const existingStore = await prisma.store.findUnique({
+      where: { slug: storeSlug },
+    });
+
+    if (existingStore) {
+      return NextResponse.json({ message: "Store URL slug is already taken" }, { status: 400 });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -35,11 +36,19 @@ export async function POST(req: Request) {
       },
     });
 
-    await prisma.store.create({
+    const store = await prisma.store.create({
       data: {
-        name: "My Store",
-        slug: generateUniqueSlug(user.email),
-        userId: user.id
+        name: businessName,
+        slug: storeSlug,
+        whatsappNumber: whatsappNumber || null,
+        userId: user.id,
+      }
+    });
+
+    await prisma.category.create({
+      data: {
+        name: "General",
+        storeId: store.id,
       }
     });
 
@@ -48,10 +57,4 @@ export async function POST(req: Request) {
     console.error("Signup error:", error);
     return NextResponse.json({ message: "Something went wrong" }, { status: 500 });
   }
-}
-
-function generateUniqueSlug(email: string) {
-  const baseSlug = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  const randomSuffix = Math.random().toString(36).substring(2, 8);
-  return `${baseSlug}-${randomSuffix}`;
 }
