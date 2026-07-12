@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { findStoreIdByUserId } from "@/lib/prisma-compat";
 
 export const ProductService = {
   /**
@@ -39,7 +40,7 @@ export const ProductService = {
    * Create/Update with explicit ownership check
    */
   async upsert(userId: string, productId: string | null, data: any) {
-    const store = await prisma.store.findUnique({ where: { userId } });
+    const store = await findStoreIdByUserId(userId);
     if (!store) throw new Error("Unauthorized: Store not found");
 
     const payload = { 
@@ -69,7 +70,7 @@ export const ProductService = {
    * Delete with ownership check
    */
   async delete(userId: string, productId: string) {
-    const store = await prisma.store.findUnique({ where: { userId } });
+    const store = await findStoreIdByUserId(userId);
     if (!store) throw new Error("Unauthorized");
 
     const product = await prisma.product.findUnique({ where: { id: productId } });

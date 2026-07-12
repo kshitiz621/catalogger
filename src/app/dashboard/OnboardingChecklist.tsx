@@ -1,133 +1,114 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Circle, ChevronRight, X } from "lucide-react";
+import { CheckCircle2, ChevronRight, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { updateOnboardingProgress } from "@/lib/actions/seller.actions";
-import { Store } from "@prisma/client";
+import type { OnboardingState } from "@/types/onboarding";
 
 interface OnboardingChecklistProps {
-  store: Store;
+  onboarding?: OnboardingState;
 }
 
-export default function OnboardingChecklist({ store }: OnboardingChecklistProps) {
+export default function OnboardingChecklist({ onboarding }: OnboardingChecklistProps) {
   const router = useRouter();
   const [isVisible, setIsVisible] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDismissing, setIsDismissing] = useState(false);
 
-  // Define steps dynamically based on store state, but we also use onboardingStep
-  const steps = [
-    {
-      id: 1,
-      title: "Add your first product",
-      description: "Start building your catalog to share with customers.",
-      href: "/dashboard/products",
-      completed: store.onboardingStep >= 1, // If they have manually completed it
-    },
-    {
-      id: 2,
-      title: "Customize your store",
-      description: "Upload a logo and pick your brand colors.",
-      href: "/dashboard/settings",
-      completed: store.onboardingStep >= 2,
-    },
-    {
-      id: 3,
-      title: "Set up WhatsApp",
-      description: "Ensure customers can contact you easily.",
-      href: "/dashboard/settings",
-      completed: !!store.whatsappNumber,
-    },
-  ];
+  if (!onboarding?.steps?.length) {
+    return null;
+  }
 
-  const completedCount = steps.filter((s) => s.completed).length;
-  const progressPercent = Math.round((completedCount / steps.length) * 100);
-  const allCompleted = completedCount === steps.length;
+  const { steps, completedCount, progressPercent, allCompleted } = onboarding;
 
-  const handleCompleteStep = async (stepId: number, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (isUpdating) return;
-    setIsUpdating(true);
+  const handleDismiss = async () => {
+    if (isDismissing) return;
+    setIsDismissing(true);
 
     try {
-      const isLastStep = stepId === steps.length;
-      await updateOnboardingProgress(stepId, isLastStep);
-      
-      if (isLastStep) {
-        setIsVisible(false);
+      if (allCompleted) {
+        await updateOnboardingProgress(steps.length, true);
       }
+      setIsVisible(false);
     } catch (error) {
-      console.error("Failed to update onboarding progress", error);
+      console.error("Failed to dismiss onboarding", error);
     } finally {
-      setIsUpdating(false);
+      setIsDismissing(false);
     }
   };
 
-  if (!isVisible || store.onboardingCompleted) {
+  if (!isVisible || onboarding.onboardingCompleted) {
     return null;
   }
 
   return (
-    <div className="mb-8 rounded-xl border border-blue-100 bg-blue-50/50 p-6 shadow-sm relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-full h-1 bg-blue-100">
-        <div 
-          className="h-full bg-blue-600 transition-all duration-500 ease-in-out"
+    <div className="rounded-xl border border-primary/20 bg-primary/5 p-6 shadow-sm relative overflow-hidden">
+      <div className="absolute top-0 left-0 w-full h-1 bg-primary/10">
+        <div
+          className="h-full bg-primary transition-all duration-500 ease-in-out"
           style={{ width: `${progressPercent}%` }}
         />
       </div>
 
-      <button 
-        onClick={() => setIsVisible(false)}
-        className="absolute top-4 right-4 text-blue-400 hover:text-blue-600 transition-colors"
+      <button
+        type="button"
+        onClick={handleDismiss}
+        disabled={isDismissing}
+        className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
+        aria-label="Dismiss onboarding"
       >
-        <X size={20} />
+        <X className="h-4 w-4" />
       </button>
 
-      <div className="mb-6">
-        <h2 className="text-lg font-bold text-gray-900 tracking-tight">Getting Started with Catalogger</h2>
-        <p className="text-sm text-gray-600 mt-1">
-          Complete these steps to get the most out of your store. ({completedCount}/{steps.length} completed)
+      <div className="mb-5">
+        <h2 className="text-[15px] font-semibold text-foreground tracking-tight">
+          Getting started with Catalogger
+        </h2>
+        <p className="text-[12px] text-muted-foreground mt-1">
+          Complete these steps to launch your store ({completedCount}/{steps.length} done)
         </p>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         {steps.map((step) => (
-          <div 
+          <button
             key={step.id}
+            type="button"
             onClick={() => !step.completed && router.push(step.href)}
-            className={`group flex items-center justify-between rounded-lg border p-4 transition-all ${
-              step.completed 
-                ? "border-green-200 bg-green-50" 
-                : "border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm cursor-pointer"
+            disabled={step.completed}
+            className={`w-full flex items-center justify-between rounded-lg border p-4 text-left transition-all ${
+              step.completed
+                ? "border-emerald-200 bg-emerald-50/60"
+                : "border-border bg-card hover:border-primary/30 hover:shadow-sm cursor-pointer"
             }`}
           >
-            <div className="flex items-start gap-4">
-              <button 
-                onClick={(e) => !step.completed && handleCompleteStep(step.id, e)}
-                disabled={step.completed || isUpdating}
-                className="mt-0.5 flex-shrink-0 focus:outline-none"
-              >
-                {step.completed ? (
-                  <CheckCircle2 className="h-6 w-6 text-green-500" />
-                ) : (
-                  <Circle className="h-6 w-6 text-gray-300 group-hover:text-blue-400 transition-colors" />
-                )}
-              </button>
+            <div className="flex items-start gap-3">
+              <CheckCircle2
+                className={`h-5 w-5 mt-0.5 shrink-0 ${
+                  step.completed ? "text-emerald-600" : "text-muted-foreground/40"
+                }`}
+              />
               <div>
-                <h3 className={`text-sm font-semibold ${step.completed ? "text-green-800" : "text-gray-900"}`}>
+                <h3
+                  className={`text-[13px] font-semibold ${
+                    step.completed ? "text-emerald-800" : "text-foreground"
+                  }`}
+                >
                   {step.title}
                 </h3>
-                <p className={`text-xs mt-1 ${step.completed ? "text-green-700" : "text-gray-500"}`}>
+                <p
+                  className={`text-[11px] mt-0.5 ${
+                    step.completed ? "text-emerald-700" : "text-muted-foreground"
+                  }`}
+                >
                   {step.description}
                 </p>
               </div>
             </div>
             {!step.completed && (
-              <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-blue-500 transition-transform group-hover:translate-x-1" />
+              <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
             )}
-          </div>
+          </button>
         ))}
       </div>
     </div>

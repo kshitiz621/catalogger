@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 enum Role {
@@ -29,9 +30,9 @@ model User {
   name      String?
   role      Role       @default(SELLER)
   status    UserStatus @default(ACTIVE)
-  
-  store     Store?     
-  
+
+  store     Store?
+
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 }
@@ -41,17 +42,23 @@ model Store {
   name                String
   slug                String      @unique
   whatsappNumber      String?
-  
+
   userId              String      @unique
   user                User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   status              StoreStatus @default(ACTIVE)
-  
+
   products            Product[]
   categories          Category[]
-  
+
   logoUrl             String?
+  bannerUrl           String?
+  description         String?
   storeTitle          String?
+  seoDescription      String?
+  seoKeywords         String?
+  accentColor         String      @default("#F43F5E")
+  socialLinks         Json?
   showCategoryImages  Boolean     @default(false)
   categoryImageStyle  String      @default("square")
   themeColor          String      @default("#E11D48")
@@ -63,7 +70,7 @@ model Store {
   headerCode          String?
   footerCode          String?
   createdAt           DateTime    @default(now())
-  
+
   onboardingCompleted Boolean     @default(false)
   onboardingStep      Int         @default(0)
 
@@ -76,13 +83,13 @@ model Product {
   price       Float
   description String?
   imageUrl    String?
-  
+
   storeId     String
   store       Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  
+
   categoryId  String?
   category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -93,14 +100,15 @@ model Product {
 model Category {
   id        String    @id @default(cuid())
   name      String
-  
+
   storeId   String
   store     Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  
+
   products  Product[]
-  
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+
   @@index([storeId])
 }
 
@@ -112,6 +120,6 @@ model PlatformSettings {
   supportEmail        String?
   registrationEnabled Boolean  @default(true)
   maintenanceMode     Boolean  @default(false)
-  
+
   updatedAt           DateTime @updatedAt
 }

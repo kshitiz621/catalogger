@@ -1,15 +1,14 @@
 "use server";
 
+import { getAppSession } from "@/lib/auth/app-session";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { PlatformSettingsSchema, SellerCreateSchema, SellerUpdateSchema } from "@/lib/schema";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 
 // Utility to enforce Super Admin role
 async function ensureSuperAdmin() {
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession();
   if (!session || session.user.role !== "SUPER_ADMIN") {
     throw new Error("Unauthorized: Super Admin access required");
   }

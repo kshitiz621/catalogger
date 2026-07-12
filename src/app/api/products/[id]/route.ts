@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
+import { getAppSession } from "@/lib/auth/app-session";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { findStoreIdByUserId } from "@/lib/prisma-compat";
 import { ProductSchema } from "@/lib/schema";
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
+    const session = await getAppSession();
     if (!session || !session.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
@@ -15,9 +15,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       return NextResponse.json({ message: "Forbidden: Seller access required" }, { status: 403 });
     }
 
-    const store = await prisma.store.findUnique({
-      where: { userId: session.user.id },
-    });
+    const store = await findStoreIdByUserId(session.user.id);
 
     if (!store) {
       return NextResponse.json({ message: "Store not found" }, { status: 404 });
@@ -71,7 +69,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
+    const session = await getAppSession();
     if (!session || !session.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
@@ -79,9 +77,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
       return NextResponse.json({ message: "Forbidden: Seller access required" }, { status: 403 });
     }
 
-    const store = await prisma.store.findUnique({
-      where: { userId: session.user.id },
-    });
+    const store = await findStoreIdByUserId(session.user.id);
 
     if (!store) {
       return NextResponse.json({ message: "Store not found" }, { status: 404 });

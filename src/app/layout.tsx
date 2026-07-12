@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
+import OAuthSessionHandler from "@/components/auth/OAuthSessionHandler";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -26,6 +28,9 @@ export default function RootLayout({
       className={`${inter.variable} h-full antialiased`}
     >
       <body suppressHydrationWarning className="min-h-full flex flex-col">
+        <Suspense fallback={null}>
+          <OAuthSessionHandler />
+        </Suspense>
         {children}
         <Toaster
           position="top-right"

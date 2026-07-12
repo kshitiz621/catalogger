@@ -1,12 +1,11 @@
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { getAppSession } from "@/lib/auth/app-session";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Metadata } from "next";
 import DashboardLayoutClient from "./DashboardLayoutClient";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession();
   if (!session) return { title: "Dashboard" };
 
   const store = await prisma.store.findFirst({
@@ -32,7 +31,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession();
 
   if (!session) {
     redirect("/login");

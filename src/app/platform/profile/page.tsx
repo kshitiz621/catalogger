@@ -1,16 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Loader2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useSession } from "next-auth/react";
+import { authClient } from "@/lib/auth/client";
 
 export default function PlatformProfilePage() {
-  const { data: session, update } = useSession();
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    authClient.getSession().then(({ data }) => {
+      if (data?.user?.email) {
+        setEmail(data.user.email);
+      }
+    });
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -44,12 +52,12 @@ export default function PlatformProfilePage() {
           <div className="grid gap-6 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
-              <Input id="name" name="name" required defaultValue={session?.user?.name || ""} />
+              <Input id="name" name="name" required />
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
-              <Input id="email" name="email" type="email" required defaultValue={session?.user?.email || ""} />
+              <Input id="email" name="email" type="email" required value={email} readOnly />
             </div>
 
             <div className="space-y-2 sm:col-span-2">

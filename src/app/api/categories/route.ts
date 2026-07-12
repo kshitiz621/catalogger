@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { getAppSession } from "@/lib/auth/app-session";
 import { StoreService } from "@/lib/services/store.service";
 import { CategoryService } from "@/lib/services/category.service";
 import { CategorySchema } from "@/lib/schema";
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession();
   if (!session?.user?.id) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   if (session.user.role !== "SELLER") return NextResponse.json({ message: "Forbidden: Seller access required" }, { status: 403 });
 
@@ -18,7 +17,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession();
   if (!session?.user?.id) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   if (session.user.role !== "SELLER") return NextResponse.json({ message: "Forbidden: Seller access required" }, { status: 403 });
 

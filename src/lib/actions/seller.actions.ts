@@ -1,22 +1,22 @@
 "use server";
 
+import { getAppSession } from "@/lib/auth/app-session";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
-import { StoreUpdateSchema, ProductSchema, CategorySchema } from "@/lib/schema";
+import { findStoreByUserId, updateOnboardingFields } from "@/lib/prisma-compat";
+import { StoreSettingsService } from "@/lib/services/store-settings.service";
+import { StoreUpdateSchema } from "@/lib/schema";
+import { DEFAULT_STORE_THEME, type OnboardingState } from "@/types/onboarding";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 
 // Utility to enforce Seller role and get Store ID securely
 async function getSellerContext() {
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession();
   if (!session || session.user.role !== "SELLER") {
     throw new Error("Unauthorized: Seller access required");
   }
 
-  const store = await prisma.store.findUnique({
-    where: { userId: session.user.id }
-  });
+  const store = await findStoreByUserId(session.user.id);
 
   if (!store) {
     throw new Error("Store not found for this user");
@@ -75,6 +75,7 @@ export async function deleteProduct(id: string) {
   
   await prisma.product.delete({ where: { id } });
   revalidatePath("/dashboard/products");
+  revalidatePath("/dashboard");
   return { success: true };
 }
 
@@ -85,16 +86,71 @@ export async function deleteProduct(id: string) {
 export async function updateOnboardingProgress(step: number, completed: boolean = false) {
   const { store } = await getSellerContext();
   
-  await prisma.store.update({
-    where: { id: store.id },
-    data: {
-      onboardingStep: step,
-      ...(completed && { onboardingCompleted: true })
-    }
+  await updateOnboardingFields(store.id, {
+    onboardingStep: step,
+    ...(completed && { onboardingCompleted: true }),
   });
 
   revalidatePath("/dashboard");
   return { success: true };
+}
+
+export async function getOnboardingState(): Promise<OnboardingState> {
+  const { store } = await getSellerContext();
+
+  const productCount = await prisma.product.count({ where: { storeId: store.id } });
+
+  const steps = [
+    {
+      id: 1,
+      title: "Add your first product",
+      description: "Start building your catalog to share with customers.",
+      href: "/dashboard/products/new",
+      completed: productCount >= 1,
+    },
+    {
+      id: 2,
+      title: "Customize your store",
+      description: "Upload a logo, banner, and pick your brand colors.",
+      href: "/dashboard/settings",
+      completed:
+        !!store.logoUrl ||
+        !!store.bannerUrl ||
+        store.themeColor !== DEFAULT_STORE_THEME.themeColor,
+    },
+    {
+      id: 3,
+      title: "Set up WhatsApp",
+      description: "Ensure customers can contact you easily.",
+      href: "/dashboard/settings",
+      completed: !!store.whatsappNumber,
+    },
+  ];
+
+  const completedCount = steps.filter((step) => step.completed).length;
+  const allCompleted = completedCount === steps.length;
+  const highestStep = steps.filter((step) => step.completed).length;
+
+  if (allCompleted && !store.onboardingCompleted) {
+    await updateOnboardingFields(store.id, {
+      onboardingStep: steps.length,
+      onboardingCompleted: true,
+    });
+    store.onboardingCompleted = true;
+    store.onboardingStep = steps.length;
+  } else if (highestStep > store.onboardingStep) {
+    await updateOnboardingFields(store.id, { onboardingStep: highestStep });
+    store.onboardingStep = highestStep;
+  }
+
+  return {
+    steps,
+    completedCount,
+    progressPercent: Math.round((completedCount / steps.length) * 100),
+    allCompleted,
+    onboardingCompleted: store.onboardingCompleted || allCompleted,
+    store,
+  };
 }
 
 // -----------------------------------------------------------------------------
@@ -130,32 +186,31 @@ export async function deleteCategory(id: string) {
 // -----------------------------------------------------------------------------
 
 export async function getStoreSettings() {
-  const { store } = await getSellerContext();
-  return store;
+  const { session } = await getSellerContext();
+  const settings = await StoreSettingsService.getByUserId(session.user.id);
+  if (!settings) throw new Error("Store not found for this user");
+  return settings;
 }
 
-export async function updateStoreSettings(data: any) {
-  const { store } = await getSellerContext();
-  
+export async function updateStoreSettings(data: unknown) {
+  const { session } = await getSellerContext();
+
   const result = StoreUpdateSchema.safeParse(data);
   if (!result.success) {
     return { error: result.error.issues[0].message };
   }
 
-  // Check if slug is taken by someone else
-  const existingStore = await prisma.store.findUnique({ where: { slug: result.data.slug } });
-  if (existingStore && existingStore.id !== store.id) {
-    return { error: "Store URL slug is already taken" };
+  try {
+    const store = await StoreSettingsService.update(session.user.id, result.data);
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/settings");
+    revalidatePath(`/store/${store.slug}`);
+    return { success: true, store };
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Failed to update settings",
+    };
   }
-
-  const updatedStore = await prisma.store.update({
-    where: { id: store.id },
-    data: result.data
-  });
-
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/settings");
-  return { success: true, store: updatedStore };
 }
 
 // -----------------------------------------------------------------------------

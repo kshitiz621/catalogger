@@ -72,12 +72,11 @@ export function useCart(currentStoreId: string) {
     return () => window.removeEventListener('cart-updated', listener);
   }, [currentStoreId]);
 
-  const addToCart = (product: Omit<CartItem, 'quantity'>) => {
-    if (!product.productId || product.price === undefined) return; // Edge Case: Invalid product
+  const addToCart = (product: Omit<CartItem, 'quantity'>, quantity = 1) => {
+    if (!product.productId || product.price === undefined) return;
 
     const prev = getCartFromStorage() || { storeId: currentStoreId, items: [] };
-    
-    // Safety check again right before updating
+
     if (prev.storeId !== currentStoreId) {
       prev.items = [];
     }
@@ -86,9 +85,9 @@ export function useCart(currentStoreId: string) {
     let newItems = [...prev.items];
 
     if (existingIndex >= 0) {
-      newItems[existingIndex].quantity += 1;
+      newItems[existingIndex].quantity += quantity;
     } else {
-      newItems.push({ ...product, quantity: 1 });
+      newItems.push({ ...product, quantity });
     }
 
     const newState = { storeId: currentStoreId, items: newItems };

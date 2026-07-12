@@ -1,5 +1,4 @@
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { getAppSession } from "@/lib/auth/app-session";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import ProductForm from "../ProductForm";
@@ -7,7 +6,7 @@ import { ChevronRight, Plus, Package } from "lucide-react";
 import Link from "next/link";
 
 export default async function NewProductPage() {
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession();
   
   if (!session || !session.user?.id) {
     redirect("/login");

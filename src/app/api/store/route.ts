@@ -1,19 +1,43 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { getAppSession } from "@/lib/auth/app-session";
+import { StoreSettingsService } from "@/lib/services/store-settings.service";
 import { StoreUpdateSchema } from "@/lib/schema";
+
+export async function GET() {
+  try {
+    const session = await getAppSession();
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
+    if (session.user.role !== "SELLER") {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+
+    const store = await StoreSettingsService.getByUserId(session.user.id);
+
+    if (!store) {
+      return NextResponse.json({ message: "Store not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ store });
+  } catch (error) {
+    console.error("Store settings fetch error:", error);
+    return NextResponse.json({ message: "Something went wrong" }, { status: 500 });
+  }
+}
 
 export async function PUT(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getAppSession();
 
-    if (!session || !session.user?.id) {
+    if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
-    
+
     if (session.user.role !== "SELLER") {
-      return NextResponse.json({ message: "Forbidden: Seller access required" }, { status: 403 });
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
     const json = await req.json();
@@ -26,57 +50,16 @@ export async function PUT(req: Request) {
       );
     }
 
-    const data = result.data;
-
-    // --- Verify ownership ---
-    const userStore = await prisma.store.findUnique({
-      where: { userId: session.user.id },
-    });
-
-    if (!userStore) {
-      return NextResponse.json({ message: "Store not found for your account" }, { status: 404 });
-    }
-
-    // --- Check slug uniqueness (exclude current store) ---
-    const existingStore = await prisma.store.findUnique({
-      where: { slug: data.slug },
-    });
-
-    if (existingStore && existingStore.id !== userStore.id) {
-      return NextResponse.json(
-        { message: "This slug is already taken. Please choose a different one." },
-        { status: 409 }
-      );
-    }
-
-    // --- Update ---
-    const updatedStore = await prisma.store.update({
-      where: { id: userStore.id },
-      data: {
-        name: data.name,
-        slug: data.slug,
-        whatsappNumber: data.whatsappNumber,
-        logoUrl: data.logoUrl,
-        storeTitle: data.storeTitle,
-        showCategoryImages: data.showCategoryImages,
-        categoryImageStyle: data.categoryImageStyle,
-        themeColor: data.themeColor,
-        headerCode: data.headerCode,
-        footerCode: data.footerCode,
-        productsPerRow: data.productsPerRow,
-        fontFamily: data.fontFamily,
-        fontSize: data.fontSize,
-        fontWeight: data.fontWeight,
-        cardRadius: data.cardRadius,
-      },
-    });
+    const store = await StoreSettingsService.update(session.user.id, result.data);
 
     return NextResponse.json(
-      { message: "Store updated successfully", store: updatedStore },
+      { message: "Store updated successfully", store },
       { status: 200 }
     );
   } catch (error) {
     console.error("Store update error:", error);
-    return NextResponse.json({ message: "Something went wrong" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Something went wrong";
+    const status = message.includes("taken") ? 409 : 500;
+    return NextResponse.json({ message }, { status });
   }
 }

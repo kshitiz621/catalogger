@@ -1,13 +1,12 @@
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { getAppSession } from "@/lib/auth/app-session";
 import { redirect } from "next/navigation";
-import { ShieldCheck, LogOut, Users, Settings, LayoutDashboard, Menu } from "lucide-react";
+import { ShieldCheck, Users, Settings, LayoutDashboard, Menu } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import PlatformSignOutButton from "@/components/PlatformSignOutButton";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 export default async function PlatformLayout({ children }: { children: React.ReactNode }) {
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession();
 
   if (!session || session.user.role !== "SUPER_ADMIN") {
     redirect("/platform/login");
@@ -56,10 +55,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
           <div className="mb-4 truncate px-2 text-sm text-zinc-400">
             {session.user.email}
           </div>
-          <Link href="/api/auth/signout" className="flex items-center justify-start w-full px-4 py-2 text-sm font-medium rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors">
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign out
-          </Link>
+          <PlatformSignOutButton />
         </div>
       </aside>
 

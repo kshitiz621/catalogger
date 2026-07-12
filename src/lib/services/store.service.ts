@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { findStoreByUserId, findStoreBySlug, updateStore } from "@/lib/prisma-compat";
 
 export const StoreService = {
   /**
@@ -43,24 +44,19 @@ export const StoreService = {
    * Update store settings with ownership check
    */
   async update(userId: string, data: { name: string; slug: string; whatsappNumber: string }) {
-    const store = await prisma.store.findUnique({ where: { userId } });
+    const store = await findStoreByUserId(userId);
     
     if (!store) throw new Error("Store not found");
 
     // Check if slug is taken by another store
-    const existing = await prisma.store.findUnique({
-      where: { slug: data.slug }
-    });
+    const existing = await findStoreBySlug(data.slug);
 
     if (existing && existing.id !== store.id) throw new Error("Slug is already taken");
 
-    return prisma.store.update({
-      where: { id: store.id },
-      data: {
-        name: data.name,
-        slug: data.slug,
-        whatsappNumber: data.whatsappNumber
-      }
+    return updateStore(store.id, {
+      name: data.name,
+      slug: data.slug,
+      whatsappNumber: data.whatsappNumber
     });
   }
 };

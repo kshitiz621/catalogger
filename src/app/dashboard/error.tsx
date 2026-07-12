@@ -3,7 +3,8 @@
 import { useEffect } from "react";
 import { AlertCircle, RotateCcw, Home } from "lucide-react";
 import Link from "next/link";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
 
 export default function DashboardError({

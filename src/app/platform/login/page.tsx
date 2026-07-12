@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { authClient } from "@/lib/auth/client";
 import { useRouter } from "next/navigation";
 import { Loader2, AlertCircle, Mail, Lock, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,17 +20,47 @@ export default function PlatformLoginPage() {
     setLoading(true);
     setError("");
 
-    const res = await signIn("credentials", {
-      redirect: false,
-      email,
-      password,
-    });
+    try {
+      let { error: signInError } = await authClient.signIn.email({
+        email,
+        password,
+      });
 
-    if (res?.error) {
-      setError("Invalid email or password. Please try again.");
-      setLoading(false);
-    } else {
+      if (signInError) {
+        const legacyRes = await fetch("/api/auth/legacy-login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+
+        if (legacyRes.ok) {
+          ({ error: signInError } = await authClient.signIn.email({
+            email,
+            password,
+          }));
+        }
+      }
+
+      if (signInError) {
+        setError(signInError.message || "Invalid email or password. Please try again.");
+        return;
+      }
+
+      const sessionRes = await fetch("/api/auth/app-session");
+      const sessionData = sessionRes.ok ? await sessionRes.json() : null;
+
+      if (!sessionData?.user || sessionData.user.role !== "SUPER_ADMIN") {
+        await authClient.signOut();
+        setError("This account does not have platform admin access.");
+        return;
+      }
+
       router.push("/platform/dashboard");
+      router.refresh();
+    } catch {
+      setError("Could not reach the auth server. Check Neon Auth env vars and restart the dev server.");
+    } finally {
+      setLoading(false);
     }
   };
 

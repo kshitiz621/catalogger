@@ -1,15 +1,22 @@
 "use client"
 
-import { signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { authClient } from "@/lib/auth/client";
 import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function LogoutButton() {
+  const router = useRouter();
+
   return (
     <Button
       variant="ghost"
       size="icon-sm"
-      onClick={() => signOut({ callbackUrl: "/login" })}
+      onClick={async () => {
+        await authClient.signOut();
+        router.push("/login");
+        router.refresh();
+      }}
       aria-label="Sign out"
       title="Sign out"
     >

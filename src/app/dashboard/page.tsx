@@ -1,6 +1,5 @@
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import Link from "next/link";
+import { getAppSession } from "@/lib/auth/app-session";
 import {
   Package,
   Tags,
@@ -16,10 +15,10 @@ import {
 } from "lucide-react";
 import StoreLinkCard from "./StoreLinkCard";
 import OnboardingChecklist from "./OnboardingChecklist";
-import { getDashboardMetrics } from "@/lib/actions/seller.actions";
+import { getDashboardMetrics, getOnboardingState } from "@/lib/actions/seller.actions";
 
 export default async function DashboardPage() {
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession();
   if (!session?.user?.id) return null;
 
   let metrics;
@@ -49,6 +48,13 @@ export default async function DashboardPage() {
   }
 
   const { totalProducts, totalCategories, totalViews, totalOrders, store } = metrics;
+
+  let onboarding = null;
+  try {
+    onboarding = await getOnboardingState();
+  } catch (error) {
+    console.error("Failed to load onboarding state:", error);
+  }
 
   const stats = [
     {
@@ -86,8 +92,8 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       
-      {!store.onboardingCompleted && (
-        <OnboardingChecklist store={store} />
+      {onboarding && !onboarding.onboardingCompleted && (
+        <OnboardingChecklist onboarding={JSON.parse(JSON.stringify(onboarding))} />
       )}
 
       {/* Page header */}

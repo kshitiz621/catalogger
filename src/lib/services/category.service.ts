@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { findStoreIdByUserId } from "@/lib/prisma-compat";
 
 export const CategoryService = {
   /**
@@ -35,7 +36,7 @@ export const CategoryService = {
    * Create or Update with ownership check
    */
   async upsert(userId: string, categoryId: string | null, name: string) {
-    const store = await prisma.store.findUnique({ where: { userId } });
+    const store = await findStoreIdByUserId(userId);
     if (!store) throw new Error("Unauthorized");
 
     if (categoryId) {
@@ -57,7 +58,7 @@ export const CategoryService = {
    * Delete with ownership check
    */
   async delete(userId: string, categoryId: string) {
-    const store = await prisma.store.findUnique({ where: { userId } });
+    const store = await findStoreIdByUserId(userId);
     if (!store) throw new Error("Unauthorized");
 
     const category = await prisma.category.findUnique({ where: { id: categoryId } });
