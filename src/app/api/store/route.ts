@@ -1,141 +1,66 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { getAppSession } from "@/lib/auth/app-session";
+import { hasSellerAccess } from "@/lib/auth/roles";
+import { StoreSettingsService } from "@/lib/services/store-settings.service";
+import { StoreUpdateSchema } from "@/lib/schema";
 
-export async function PUT(req: Request) {
+export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getAppSession();
 
-    if (!session || !session.user?.id) {
+    if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const { 
-      name, 
-      slug, 
-      whatsappNumber, 
-      logoUrl, 
-      storeTitle, 
-      showCategoryImages, 
-      categoryImageStyle,
-      themeColor,
-      headerCode,
-      footerCode,
-      productsPerRow,
-      fontFamily,
-      fontSize,
-      fontWeight,
-      cardRadius
-    } = await req.json();
-
-    let cleanProductsPerRow = 4;
-    if (productsPerRow !== undefined && productsPerRow !== null) {
-      const parsed = parseInt(String(productsPerRow), 10);
-      if (!isNaN(parsed) && parsed >= 2 && parsed <= 8) {
-        cleanProductsPerRow = parsed;
-      }
+    if (!hasSellerAccess(session.user.role)) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
-    const allowedFonts = ["Inter", "Outfit", "Playfair Display", "Plus Jakarta Sans", "Lora", "Montserrat", "Caveat"];
-    const cleanFontFamily = allowedFonts.includes(fontFamily) ? fontFamily : "Inter";
+    const store = await StoreSettingsService.getByUserId(session.user.id);
 
-    const allowedFontSizes = ["small", "medium", "large"];
-    const cleanFontSize = allowedFontSizes.includes(fontSize) ? fontSize : "medium";
-
-    const allowedFontWeights = ["normal", "medium", "semibold", "bold", "black"];
-    const cleanFontWeight = allowedFontWeights.includes(fontWeight) ? fontWeight : "semibold";
-
-    const allowedRadii = ["none", "sm", "md", "lg", "xl", "full"];
-    const cleanCardRadius = allowedRadii.includes(cardRadius) ? cardRadius : "lg";
-
-    // --- Validate required fields ---
-    if (!name || typeof name !== "string" || name.trim().length === 0) {
-      return NextResponse.json({ message: "Store name is required" }, { status: 400 });
+    if (!store) {
+      return NextResponse.json({ message: "Store not found" }, { status: 404 });
     }
 
-    if (!slug || typeof slug !== "string" || slug.trim().length === 0) {
-      return NextResponse.json({ message: "Store slug is required" }, { status: 400 });
+    return NextResponse.json({ store });
+  } catch (error) {
+    console.error("Store settings fetch error:", error);
+    return NextResponse.json({ message: "Something went wrong" }, { status: 500 });
+  }
+}
+
+export async function PUT(req: Request) {
+  try {
+    const session = await getAppSession();
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    // --- Validate slug format (lowercase alphanumeric + hyphens only) ---
-    const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-    const cleanSlug = slug.trim().toLowerCase();
-    if (!slugRegex.test(cleanSlug)) {
+    if (!hasSellerAccess(session.user.role)) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+
+    const json = await req.json();
+    const result = StoreUpdateSchema.safeParse(json);
+
+    if (!result.success) {
       return NextResponse.json(
-        { message: "Slug must contain only lowercase letters, numbers, and hyphens. It cannot start or end with a hyphen." },
+        { message: result.error.issues[0].message },
         { status: 400 }
       );
     }
 
-    if (cleanSlug.length < 3) {
-      return NextResponse.json({ message: "Slug must be at least 3 characters long" }, { status: 400 });
-    }
-
-    if (cleanSlug.length > 48) {
-      return NextResponse.json({ message: "Slug must be 48 characters or fewer" }, { status: 400 });
-    }
-
-    // --- Validate WhatsApp number ---
-    if (whatsappNumber !== undefined && whatsappNumber !== null && whatsappNumber !== "") {
-      const cleanNumber = String(whatsappNumber).replace(/\D/g, "");
-      if (cleanNumber.length < 10 || cleanNumber.length > 15) {
-        return NextResponse.json(
-          { message: "WhatsApp number must be between 10 and 15 digits (with country code, e.g. 919876543210)" },
-          { status: 400 }
-        );
-      }
-    }
-
-    // --- Verify ownership ---
-    const userStore = await prisma.store.findFirst({
-      where: { userId: session.user.id },
-    });
-
-    if (!userStore) {
-      return NextResponse.json({ message: "Store not found for your account" }, { status: 404 });
-    }
-
-    // --- Check slug uniqueness (exclude current store) ---
-    const existingStore = await prisma.store.findUnique({
-      where: { slug: cleanSlug },
-    });
-
-    if (existingStore && existingStore.id !== userStore.id) {
-      return NextResponse.json(
-        { message: "This slug is already taken. Please choose a different one." },
-        { status: 409 }
-      );
-    }
-
-    // --- Update ---
-    const updatedStore = await (prisma as any).store.update({
-      where: { id: userStore.id },
-      data: {
-        name: name.trim(),
-        slug: cleanSlug,
-        whatsappNumber: whatsappNumber ? String(whatsappNumber).replace(/\D/g, "") : null,
-        logoUrl: logoUrl || null,
-        storeTitle: storeTitle || null,
-        showCategoryImages: !!showCategoryImages,
-        categoryImageStyle: categoryImageStyle || "square",
-        themeColor: themeColor || "#E11D48",
-        headerCode: headerCode || null,
-        footerCode: footerCode || null,
-        productsPerRow: cleanProductsPerRow,
-        fontFamily: cleanFontFamily,
-        fontSize: cleanFontSize,
-        fontWeight: cleanFontWeight,
-        cardRadius: cleanCardRadius,
-      },
-    });
+    const store = await StoreSettingsService.update(session.user.id, result.data);
 
     return NextResponse.json(
-      { message: "Store updated successfully", store: updatedStore },
+      { message: "Store updated successfully", store },
       { status: 200 }
     );
   } catch (error) {
     console.error("Store update error:", error);
-    return NextResponse.json({ message: "Something went wrong" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Something went wrong";
+    const status = message.includes("taken") ? 409 : 500;
+    return NextResponse.json({ message }, { status });
   }
 }

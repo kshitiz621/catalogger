@@ -1,12 +1,12 @@
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { Metadata } from "next";
+import { getAppSession } from "@/lib/auth/app-session";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { Metadata } from "next";
+import { privateRouteMetadata } from "@/lib/seo/metadata";
 import DashboardLayoutClient from "./DashboardLayoutClient";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession();
   if (!session) return { title: "Dashboard" };
 
   const store = await prisma.store.findFirst({
@@ -20,6 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title,
+    ...privateRouteMetadata,
     icons: store.logoUrl ? [
       { rel: "icon", url: store.logoUrl },
       { rel: "apple-touch-icon", url: store.logoUrl }
@@ -32,7 +33,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession();
 
   if (!session) {
     redirect("/login");
@@ -47,6 +48,7 @@ export default async function DashboardLayout({
     <DashboardLayoutClient 
       session={JSON.parse(JSON.stringify(session))} 
       store={store ? JSON.parse(JSON.stringify(store)) : null}
+      isSuperAdmin={session.user.role === "SUPER_ADMIN"}
     >
       {children}
     </DashboardLayoutClient>

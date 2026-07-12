@@ -1,19 +1,22 @@
 import { NextResponse } from "next/server";
+import { getAppSession } from "@/lib/auth/app-session";
+import { hasSellerAccess } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { findStoreIdByUserId } from "@/lib/prisma-compat";
+import { ProductSchema } from "@/lib/schema";
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
+    const session = await getAppSession();
     if (!session || !session.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
+    if (!hasSellerAccess(session.user.role)) {
+      return NextResponse.json({ message: "Forbidden: Seller access required" }, { status: 403 });
+    }
 
-    const store = await prisma.store.findFirst({
-      where: { userId: session.user.id },
-    });
+    const store = await findStoreIdByUserId(session.user.id);
 
     if (!store) {
       return NextResponse.json({ message: "Store not found" }, { status: 404 });
@@ -27,35 +30,32 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
-    const { name, price, description, imageUrl, categoryId } = await req.json();
-
-    if (!name || typeof name !== "string" || name.trim() === "") {
-      return NextResponse.json({ message: "Valid product name is required" }, { status: 400 });
+    const json = await req.json();
+    const result = ProductSchema.safeParse(json);
+    
+    if (!result.success) {
+      return NextResponse.json({ message: result.error.issues[0].message }, { status: 400 });
     }
 
-    if (price === undefined || typeof price !== "number" || price <= 0) {
-      return NextResponse.json({ message: "Valid numeric price > 0 is required" }, { status: 400 });
-    }
+    const data = result.data;
 
-    if (categoryId) {
+    if (data.categoryId) {
       const category = await prisma.category.findUnique({
-        where: { id: categoryId },
+        where: { id: data.categoryId },
       });
       if (!category || category.storeId !== store.id) {
         return NextResponse.json({ message: "Forbidden: Invalid category" }, { status: 403 });
       }
-    } else if (categoryId === "") {
-        // Fallback for empty strings resetting the field correctly.
     }
 
     const updatedProduct = await prisma.product.update({
       where: { id },
       data: {
-        name: name.trim(),
-        price,
-        description: description?.trim() || null,
-        imageUrl: imageUrl?.trim() || null,
-        categoryId: categoryId === "" ? null : (categoryId || null),
+        name: data.name,
+        price: data.price,
+        description: data.description || null,
+        imageUrl: data.imageUrl || null,
+        categoryId: data.categoryId === "" ? null : (data.categoryId || null),
       },
       include: { category: true },
     });
@@ -70,14 +70,15 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
+    const session = await getAppSession();
     if (!session || !session.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
+    if (!hasSellerAccess(session.user.role)) {
+      return NextResponse.json({ message: "Forbidden: Seller access required" }, { status: 403 });
+    }
 
-    const store = await prisma.store.findFirst({
-      where: { userId: session.user.id },
-    });
+    const store = await findStoreIdByUserId(session.user.id);
 
     if (!store) {
       return NextResponse.json({ message: "Store not found" }, { status: 404 });

@@ -3,42 +3,80 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+enum Role {
+  SUPER_ADMIN
+  SELLER
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum StoreStatus {
+  ACTIVE
+  SUSPENDED
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
+  id        String     @id @default(cuid())
+  email     String     @unique
   password  String
   name      String?
-  stores    Store[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  role      Role       @default(SELLER)
+  status    UserStatus @default(ACTIVE)
+
+  store     Store?
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 }
 
 model Store {
-  id              String     @id @default(cuid())
-  name            String
-  slug            String     @unique
-  whatsappNumber  String?
-  userId          String
-  user            User       @relation(fields: [userId], references: [id])
-  products        Product[]
-  categories      Category[]
+  id                  String      @id @default(cuid())
+  name                String
+  slug                String      @unique
+  whatsappNumber      String?
+
+  userId              String      @unique
+  user                User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  status              StoreStatus @default(ACTIVE)
+
+  products            Product[]
+  categories          Category[]
+  analytics           StoreAnalytics?
+  analyticsDataPoints AnalyticsDataPoint[]
+
   logoUrl             String?
+  bannerUrl           String?
+  description         String?
   storeTitle          String?
-  showCategoryImages  Boolean    @default(false)
-  categoryImageStyle  String     @default("square") // "square" or "rounded"
-  themeColor          String     @default("#E11D48")
-  productsPerRow      Int        @default(4)
-  fontFamily          String     @default("Inter")
-  fontSize            String     @default("medium")
-  fontWeight          String     @default("semibold")
-  cardRadius          String     @default("lg")
+  seoDescription      String?
+  seoKeywords         String?
+  accentColor         String      @default("#F43F5E")
+  socialLinks         Json?
+  showCategoryImages  Boolean     @default(false)
+  categoryImageStyle  String      @default("square")
+  themeColor          String      @default("#E11D48")
+  productsPerRow      Int         @default(4)
+  fontFamily          String      @default("Inter")
+  fontSize            String      @default("medium")
+  fontWeight          String      @default("semibold")
+  cardRadius          String      @default("lg")
   headerCode          String?
   footerCode          String?
-  createdAt           DateTime   @default(now())
+  createdAt           DateTime    @default(now())
+
+  onboardingCompleted Boolean     @default(false)
+  onboardingStep      Int         @default(0)
+
+  @@index([userId])
 }
 
 model Product {
@@ -47,10 +85,13 @@ model Product {
   price       Float
   description String?
   imageUrl    String?
+
   storeId     String
-  store       Store     @relation(fields: [storeId], references: [id])
+  store       Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
   categoryId  String?
   category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -61,11 +102,50 @@ model Product {
 model Category {
   id        String    @id @default(cuid())
   name      String
+
   storeId   String
   store     Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
   products  Product[]
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
   @@index([storeId])
+}
+
+model StoreAnalytics {
+  storeId     String   @id
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  totalViews  Int      @default(0)
+  totalOrders Int      @default(0)
+  updatedAt   DateTime @updatedAt
+}
+
+model AnalyticsDataPoint {
+  id        String   @id @default(cuid())
+  scope     String
+  metric    String
+  date      DateTime @db.Date
+  value     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  storeId   String?
+  store     Store?   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([scope, metric, date])
+  @@index([scope, metric])
+  @@index([storeId, metric, date])
+}
+
+model PlatformSettings {
+  id                  String   @id @default("singleton")
+  platformName        String   @default("Catalogger")
+  logoUrl             String?
+  themeColor          String   @default("#000000")
+  supportEmail        String?
+  registrationEnabled Boolean  @default(true)
+  maintenanceMode     Boolean  @default(false)
+
+  updatedAt           DateTime @updatedAt
 }

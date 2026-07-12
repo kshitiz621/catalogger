@@ -1,23 +1,21 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Suspense } from "react";
+import { Inter } from "next/font/google";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-export const metadata: Metadata = {
-  title: "Catalogger",
-  description: "Modern, high-conversion product catalogues for your business.",
-};
-
 import { Toaster } from "react-hot-toast";
+import OAuthSessionHandler from "@/components/auth/OAuthSessionHandler";
+import { createPageMetadata, SITE_NAME } from "@/lib/seo/metadata";
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  display: "swap",
+});
+
+export const metadata: Metadata = createPageMetadata({
+  title: SITE_NAME,
+});
 
 export default function RootLayout({
   children,
@@ -27,11 +25,29 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} h-full antialiased`}
     >
       <body suppressHydrationWarning className="min-h-full flex flex-col">
+        <Suspense fallback={null}>
+          <OAuthSessionHandler />
+        </Suspense>
         {children}
-        <Toaster position="top-right" />
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: "var(--card)",
+              color: "var(--foreground)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius-scale-lg)",
+              fontSize: "13px",
+              fontFamily: "Inter, sans-serif",
+              fontWeight: "500",
+              boxShadow: "var(--shadow-scale-lg)",
+            },
+          }}
+        />
       </body>
     </html>
   );

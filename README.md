@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Catalogger
 
-## Getting Started
+Modern product catalogue platform for small businesses. Sellers create WhatsApp-ready online stores; customers browse and order without friction.
 
-First, run the development server:
+## Stack
+
+- **Next.js 16** (App Router)
+- **PostgreSQL** via Prisma (Neon)
+- **Neon Auth** for authentication
+- **Tailwind CSS 4** + shadcn/ui
+
+## Quick start
 
 ```bash
+cp .env.example .env
+# Fill in DATABASE_URL, NEON_AUTH_* from Neon dashboard
+
+npm install
+npx prisma migrate deploy
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Development server |
+| `npm run build` | Migrate + production build |
+| `npm run start` | Production server |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript check |
 
-## Learn More
+## Project structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+  app/              # Routes (storefront, dashboard, platform, API)
+  components/       # UI + feature components
+  lib/
+    seo/            # Metadata, sitemap helpers
+    security/       # Headers, rate limits, platform guards
+    api/            # API response helpers
+    monitoring/     # Health checks, structured logging
+    services/       # Business logic (stores, analytics, signup)
+  types/            # Shared TypeScript types
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Environment
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+See `.env.example` for required variables. Set `NEXT_PUBLIC_APP_URL` in production for correct SEO canonical URLs, sitemap, and Open Graph images.
 
-## Deploy on Vercel
+## Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for Neon, Vercel, and launch checklist.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Launch audit
+
+See [docs/LAUNCH-AUDIT.md](docs/LAUNCH-AUDIT.md) for SEO, performance, security, and Lighthouse notes.
