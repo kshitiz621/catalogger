@@ -3,9 +3,13 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, ArrowRight, Package } from "lucide-react";
 import { PublicStoreService } from "@/lib/services/public-store.service";
+import { createProductMetadata } from "@/lib/seo/store-metadata";
 import { formatPrice } from "@/lib/storefront/format";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import AddToCartButton from "./AddToCartButton";
 import { RelatedProducts } from "./RelatedProducts";
+
+export const revalidate = 60;
 
 interface PageProps {
   params: Promise<{ slug: string; productId: string }>;
@@ -18,16 +22,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!data) return { title: "Product Not Found" };
 
   const store = await PublicStoreService.getStoreBySlug(slug);
+  if (!store) return { title: "Product Not Found" };
 
-  return {
-    title: `${data.product.name} | ${data.store.name}`,
-    icons: store?.logoUrl
-      ? [
-          { rel: "icon", url: store.logoUrl },
-          { rel: "apple-touch-icon", url: store.logoUrl },
-        ]
-      : undefined,
-  };
+  return createProductMetadata(store, data.product);
 }
 
 export default async function ProductPage({ params }: PageProps) {
@@ -66,11 +63,14 @@ export default async function ProductPage({ params }: PageProps) {
           <div className="grid grid-cols-1 md:grid-cols-2">
             <div className="relative aspect-square md:aspect-auto md:min-h-[480px] lg:min-h-[560px] w-full bg-muted/30 flex items-center justify-center p-6 sm:p-8 border-b md:border-b-0 md:border-r border-border/40">
               {product.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <OptimizedImage
                   src={product.imageUrl}
                   alt={product.name}
-                  className="w-full h-full max-h-[420px] md:max-h-none object-contain rounded-2xl transition-transform hover:scale-[1.02] duration-500"
+                  width={800}
+                  height={800}
+                  className="h-full max-h-[420px] w-full rounded-2xl object-contain transition-transform duration-500 hover:scale-[1.02] md:max-h-none"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  priority
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center text-muted-foreground opacity-40">

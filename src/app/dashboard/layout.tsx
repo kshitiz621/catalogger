@@ -1,7 +1,8 @@
+import { Metadata } from "next";
 import { getAppSession } from "@/lib/auth/app-session";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { Metadata } from "next";
+import { privateRouteMetadata } from "@/lib/seo/metadata";
 import DashboardLayoutClient from "./DashboardLayoutClient";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -19,6 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title,
+    ...privateRouteMetadata,
     icons: store.logoUrl ? [
       { rel: "icon", url: store.logoUrl },
       { rel: "apple-touch-icon", url: store.logoUrl }
@@ -46,6 +48,7 @@ export default async function DashboardLayout({
     <DashboardLayoutClient 
       session={JSON.parse(JSON.stringify(session))} 
       store={store ? JSON.parse(JSON.stringify(store)) : null}
+      isSuperAdmin={session.user.role === "SUPER_ADMIN"}
     >
       {children}
     </DashboardLayoutClient>

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAppSession } from "@/lib/auth/app-session";
+import { hasSellerAccess } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
 import { findStoreIdByUserId } from "@/lib/prisma-compat";
 import { ProductSchema } from "@/lib/schema";
@@ -11,7 +12,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     if (!session || !session.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
-    if (session.user.role !== "SELLER") {
+    if (!hasSellerAccess(session.user.role)) {
       return NextResponse.json({ message: "Forbidden: Seller access required" }, { status: 403 });
     }
 
@@ -73,7 +74,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     if (!session || !session.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
-    if (session.user.role !== "SELLER") {
+    if (!hasSellerAccess(session.user.role)) {
       return NextResponse.json({ message: "Forbidden: Seller access required" }, { status: 403 });
     }
 

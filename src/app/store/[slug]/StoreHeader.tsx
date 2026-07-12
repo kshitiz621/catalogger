@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import { ShoppingCart, Store as StoreIcon } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 
@@ -29,11 +30,13 @@ export default function StoreHeader({
           >
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center group-hover:bg-primary/10 transition-colors overflow-hidden shrink-0">
               {logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <OptimizedImage
                   src={logoUrl}
                   alt={storeName}
-                  className="w-full h-full object-cover"
+                  width={40}
+                  height={40}
+                  className="h-full w-full object-cover"
+                  sizes="40px"
                 />
               ) : (
                 <StoreIcon className="w-5 h-5 text-primary" />

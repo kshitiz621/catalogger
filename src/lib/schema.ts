@@ -6,6 +6,16 @@ export const SignupSchema = z.object({
   name: z.string().min(1, "Name is required").optional(),
 });
 
+export const LegacyLoginSchema = z.object({
+  email: z.string().email("Invalid email address").trim().toLowerCase(),
+  password: z.string().min(1, "Password is required"),
+});
+
+export const ChangePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z.string().min(6, "New password must be at least 6 characters"),
+});
+
 export const SellerOAuthSignupSchema = z.object({
   name: z.string().min(2, "Owner name must be at least 2 characters").trim().optional(),
   businessName: z.string().min(2, "Business name must be at least 2 characters").trim(),

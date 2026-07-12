@@ -8,6 +8,7 @@ import type {
   StorefrontSort,
 } from "@/types/storefront";
 import { getStoreFontUrl } from "@/lib/storefront/theme";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import { StoreSearch } from "@/components/store/store-search";
 import { StoreFilters } from "@/components/store/store-filters";
 import { CategoryChips } from "@/components/store/category-chips";
@@ -106,8 +107,6 @@ export default function StoreCatalogue({
     >
       <link rel="stylesheet" href={fontUrl} />
 
-      <link rel="stylesheet" href={fontUrl} />
-
       {/* Hero / Banner */}
       <div className="relative overflow-hidden rounded-2xl border border-border mb-2">
         <div
@@ -121,11 +120,14 @@ export default function StoreCatalogue({
           }
         >
           {store.bannerUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <OptimizedImage
               src={store.bannerUrl}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover"
+              alt={`${store.name} banner`}
+              fill
+              containerClassName="absolute inset-0"
+              className="object-cover"
+              sizes="100vw"
+              priority
             />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />

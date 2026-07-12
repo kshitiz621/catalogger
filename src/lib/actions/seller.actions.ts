@@ -1,8 +1,10 @@
 "use server";
 
 import { getAppSession } from "@/lib/auth/app-session";
+import { hasSellerAccess } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
 import { findStoreByUserId, updateOnboardingFields } from "@/lib/prisma-compat";
+import { AnalyticsService } from "@/lib/services/analytics.service";
 import { StoreSettingsService } from "@/lib/services/store-settings.service";
 import { StoreUpdateSchema } from "@/lib/schema";
 import { DEFAULT_STORE_THEME, type OnboardingState } from "@/types/onboarding";
@@ -12,7 +14,7 @@ import { revalidatePath } from "next/cache";
 // Utility to enforce Seller role and get Store ID securely
 async function getSellerContext() {
   const session = await getAppSession();
-  if (!session || session.user.role !== "SELLER") {
+  if (!session || !hasSellerAccess(session.user.role)) {
     throw new Error("Unauthorized: Seller access required");
   }
 
@@ -31,22 +33,19 @@ async function getSellerContext() {
 
 export async function getDashboardMetrics() {
   const { store } = await getSellerContext();
-
-  const [totalProducts, totalCategories] = await Promise.all([
-    prisma.product.count({ where: { storeId: store.id } }),
-    prisma.category.count({ where: { storeId: store.id } })
-  ]);
-
-  // Placeholders for Views and Orders
-  const totalViews = 1240; 
-  const totalOrders = 42;
+  const analytics = await AnalyticsService.getSellerAnalytics(store.id);
 
   return {
-    totalProducts,
-    totalCategories,
-    totalViews,
-    totalOrders,
-    store
+    totalProducts: analytics.totalProducts,
+    totalCategories: analytics.totalCategories,
+    totalViews: analytics.totalViews,
+    totalOrders: analytics.totalOrders,
+    viewsArePlaceholder: analytics.viewsArePlaceholder,
+    ordersArePlaceholder: analytics.ordersArePlaceholder,
+    productTrend: analytics.productTrend,
+    viewsTrend: analytics.viewsTrend,
+    ordersTrend: analytics.ordersTrend,
+    store,
   };
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import type { PublicCategory, StorefrontTheme } from "@/types/storefront";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import { getThemeClasses } from "@/lib/storefront/theme";
 
 interface CategoryChipsProps {
@@ -47,11 +48,13 @@ export function CategoryChips({
                 }`}
               >
                 {theme.showCategoryImages && cat.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <OptimizedImage
                     src={cat.imageUrl}
                     alt={cat.name}
-                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                    width={64}
+                    height={64}
+                    className="h-full w-full object-cover transition-transform duration-300 hover:scale-110"
+                    sizes="64px"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-primary/5">

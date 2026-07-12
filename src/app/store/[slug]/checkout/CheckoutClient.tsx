@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import { useCart } from "@/hooks/useCart";
 import Link from "next/link";
 import {
@@ -258,8 +259,14 @@ export default function CheckoutClient({
                 <div key={item.productId} className="flex items-center gap-3">
                   <div className="w-11 h-11 rounded-lg bg-muted overflow-hidden border border-border/60 shrink-0">
                     {item.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                      <OptimizedImage
+                        src={item.imageUrl}
+                        alt={item.name}
+                        fill
+                        containerClassName="h-full w-full"
+                        className="object-cover"
+                        sizes="44px"
+                      />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <ShoppingBag className="w-4 h-4 text-muted-foreground/50" />

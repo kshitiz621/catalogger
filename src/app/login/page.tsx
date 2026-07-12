@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import { authClient } from "@/lib/auth/client";
-import { resolvePostAuthRedirect, ensureFreshOAuthSession, syncAuthEmailChange } from "@/components/auth/auth-utils";
+import { safeEmailSignIn } from "@/lib/auth/safe-sign-in";
+import {
+  ensureFreshOAuthSession,
+  resolvePostAuthRedirect,
+  syncAuthEmailChange,
+} from "@/components/auth/auth-utils";
 import Link from "next/link";
 import { Loader2, AlertCircle, Mail, Lock, Store, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -124,23 +129,21 @@ export default function LoginPage() {
     setError("");
 
     try {
-      let { error: signInError } = await authClient.signIn.email({
-        email,
-        password,
-      });
+      let { error: signInError } = await safeEmailSignIn(email, password);
 
       if (signInError) {
         const legacyRes = await fetch("/api/auth/legacy-login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify({ email, password }),
         });
 
         if (legacyRes.ok) {
-          ({ error: signInError } = await authClient.signIn.email({
-            email,
-            password,
-          }));
+          ({ error: signInError } = await safeEmailSignIn(email, password));
+        } else if (legacyRes.status === 401) {
+          setError("Invalid email or password.");
+          return;
         }
       }
 
@@ -150,8 +153,9 @@ export default function LoginPage() {
       }
 
       await finishLogin(setError);
-    } catch {
-      setError("Could not reach the auth server. Check Neon Auth env vars and restart the dev server.");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Authentication failed.";
+      setError(message);
     } finally {
       setLoading(false);
     }

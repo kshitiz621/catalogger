@@ -4,6 +4,7 @@ import { useCart } from "@/hooks/useCart";
 import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import { formatPrice } from "@/lib/storefront/format";
 import { CartSkeleton } from "@/components/store/skeletons";
 
@@ -78,7 +79,14 @@ export default function CartClient({
               <div className="w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 rounded-xl bg-muted flex items-center justify-center overflow-hidden border border-border/60">
                 {item.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                  <OptimizedImage
+                    src={item.imageUrl}
+                    alt={item.name}
+                    fill
+                    containerClassName="h-full w-full"
+                    className="object-cover"
+                    sizes="80px"
+                  />
                 ) : (
                   <ShoppingBag className="w-8 h-8 text-muted-foreground/50" />
                 )}

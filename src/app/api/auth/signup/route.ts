@@ -2,9 +2,25 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/server";
 import { SellerSignupSchema, SellerOAuthSignupSchema } from "@/lib/schema";
 import { registerSellerStore } from "@/lib/services/signup.service";
+import { PlatformGuardService } from "@/lib/security/platform-guard";
+import { jsonError } from "@/lib/api/handler";
+import { logger } from "@/lib/monitoring/logger";
 
 export async function POST(req: Request) {
   try {
+    const [registrationEnabled, maintenanceActive] = await Promise.all([
+      PlatformGuardService.isRegistrationEnabled(),
+      PlatformGuardService.isMaintenanceActive(),
+    ]);
+
+    if (maintenanceActive) {
+      return jsonError("Registration is temporarily unavailable", 503);
+    }
+
+    if (!registrationEnabled) {
+      return jsonError("New seller registration is currently closed", 403);
+    }
+
     const { data: session } = await auth.getSession();
     if (!session?.user?.email) {
       return NextResponse.json({ message: "Sign in first to create your store" }, { status: 401 });
@@ -74,7 +90,9 @@ export async function POST(req: Request) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Signup error:", error);
-    return NextResponse.json({ message: "Something went wrong" }, { status: 500 });
+    logger.error("Signup error", {
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
+    return jsonError("Something went wrong", 500);
   }
 }

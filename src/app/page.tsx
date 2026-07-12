@@ -3,8 +3,9 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth/server";
 import { getAppSession } from "@/lib/auth/app-session";
 import LandingPage from "@/components/landing/landing-page";
+import { createPageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
   title: "Catalogger — Beautiful Product Catalogues for Your Business",
   description:
     "Create stunning online product catalogues in minutes. Share anywhere, let customers order via WhatsApp. Free to start, no coding required.",
@@ -17,25 +18,7 @@ export const metadata: Metadata = {
     "catalogue maker",
     "sell online",
   ],
-  openGraph: {
-    title: "Catalogger — Beautiful Product Catalogues for Your Business",
-    description:
-      "Create stunning online product catalogues in minutes. Share anywhere, let customers order via WhatsApp.",
-    type: "website",
-    locale: "en_IN",
-    siteName: "Catalogger",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Catalogger — Beautiful Product Catalogues",
-    description:
-      "Create stunning product catalogues and sell via WhatsApp. Free to start.",
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-};
+});
 
 const jsonLd = {
   "@context": "https://schema.org",

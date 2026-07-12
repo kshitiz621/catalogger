@@ -12,6 +12,7 @@ import {
   Plus,
   AlertTriangle,
   User,
+  ShieldCheck,
 } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import { cn } from "@/lib/utils";
@@ -22,9 +23,10 @@ interface SidebarProps {
   userEmail: string;
   closeMobileMenu?: () => void;
   logoUrl?: string | null;
+  isSuperAdmin?: boolean;
 }
 
-export default function SidebarContent({ store, userName, userEmail, closeMobileMenu, logoUrl }: SidebarProps) {
+export default function SidebarContent({ store, userName, userEmail, closeMobileMenu, logoUrl, isSuperAdmin = false }: SidebarProps) {
   const pathname = usePathname();
 
   const navItems = [
@@ -34,6 +36,10 @@ export default function SidebarContent({ store, userName, userEmail, closeMobile
     { label: "Settings", href: "/dashboard/settings", icon: Settings },
     { label: "Profile", href: "/dashboard/profile", icon: User },
   ];
+
+  const adminItems = isSuperAdmin
+    ? [{ label: "Platform Admin", href: "/platform/dashboard", icon: ShieldCheck }]
+    : [];
 
   const handleClose = () => {
     if (closeMobileMenu) closeMobileMenu();
@@ -96,6 +102,33 @@ export default function SidebarContent({ store, userName, userEmail, closeMobile
             );
           })}
         </nav>
+
+        {adminItems.length > 0 && (
+          <nav className="space-y-0.5">
+            <p className="px-2 pb-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
+              Admin
+            </p>
+            {adminItems.map((item) => {
+              const isActive = pathname.startsWith("/platform");
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={handleClose}
+                  className={cn(
+                    "group flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors duration-150",
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  )}
+                >
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+        )}
 
         {/* Live store link */}
         {store && (

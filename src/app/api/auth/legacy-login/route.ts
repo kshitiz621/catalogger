@@ -1,46 +1,46 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth/server";
+import { syncLegacyCredentialToNeonAuth } from "@/lib/auth/sync-legacy-neon-auth";
+import { LegacyLoginSchema } from "@/lib/schema";
+import { jsonError } from "@/lib/api/handler";
+import { logger } from "@/lib/monitoring/logger";
 
 export async function POST(req: Request) {
   try {
-    const { email, password } = await req.json();
+    const body = await req.json();
+    const result = LegacyLoginSchema.safeParse(body);
 
-    if (!email || !password) {
-      return NextResponse.json({ message: "Email and password are required" }, { status: 400 });
+    if (!result.success) {
+      return jsonError(result.error.issues[0]?.message ?? "Invalid request");
     }
 
+    const { email, password } = result.data;
     const user = await prisma.user.findUnique({ where: { email } });
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
-      return NextResponse.json({ message: "Invalid email or password" }, { status: 401 });
+      return jsonError("Invalid email or password", 401);
     }
 
     if (user.status === "SUSPENDED") {
-      return NextResponse.json({ message: "Account suspended" }, { status: 403 });
+      return jsonError("Account suspended", 403);
     }
 
-    const { error: signUpError } = await auth.signUp.email({
+    const syncResult = await syncLegacyCredentialToNeonAuth({
       email,
       password,
       name: user.name || email,
     });
 
-    if (
-      signUpError &&
-      !signUpError.message?.toLowerCase().includes("already exists") &&
-      !signUpError.message?.toLowerCase().includes("user already")
-    ) {
-      return NextResponse.json(
-        { message: signUpError.message || "Failed to migrate account to Neon Auth" },
-        { status: 400 }
-      );
+    if (!syncResult.ok) {
+      return jsonError(syncResult.error, 400);
     }
 
     return NextResponse.json({ message: "Account ready. Signing you in..." }, { status: 200 });
   } catch (error) {
-    console.error("Legacy login migration error:", error);
-    return NextResponse.json({ message: "Something went wrong" }, { status: 500 });
+    logger.error("Legacy login migration error", {
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
+    return jsonError("Something went wrong", 500);
   }
 }

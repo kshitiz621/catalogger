@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import OAuthSessionHandler from "@/components/auth/OAuthSessionHandler";
+import { createPageMetadata, SITE_NAME } from "@/lib/seo/metadata";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -12,10 +13,9 @@ const inter = Inter({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "Catalogger",
-  description: "Modern, high-conversion product catalogues for your business.",
-};
+export const metadata: Metadata = createPageMetadata({
+  title: SITE_NAME,
+});
 
 export default function RootLayout({
   children,

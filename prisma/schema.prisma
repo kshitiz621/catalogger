@@ -50,6 +50,8 @@ model Store {
 
   products            Product[]
   categories          Category[]
+  analytics           StoreAnalytics?
+  analyticsDataPoints AnalyticsDataPoint[]
 
   logoUrl             String?
   bannerUrl           String?
@@ -110,6 +112,30 @@ model Category {
   updatedAt DateTime  @updatedAt
 
   @@index([storeId])
+}
+
+model StoreAnalytics {
+  storeId     String   @id
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  totalViews  Int      @default(0)
+  totalOrders Int      @default(0)
+  updatedAt   DateTime @updatedAt
+}
+
+model AnalyticsDataPoint {
+  id        String   @id @default(cuid())
+  scope     String
+  metric    String
+  date      DateTime @db.Date
+  value     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  storeId   String?
+  store     Store?   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([scope, metric, date])
+  @@index([scope, metric])
+  @@index([storeId, metric, date])
 }
 
 model PlatformSettings {

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAppSession } from "@/lib/auth/app-session";
+import { hasSellerAccess } from "@/lib/auth/roles";
 import { StoreService } from "@/lib/services/store.service";
 import { ProductService } from "@/lib/services/product.service";
 import { ProductSchema } from "@/lib/schema";
@@ -7,7 +8,7 @@ import { ProductSchema } from "@/lib/schema";
 export async function GET() {
   const session = await getAppSession();
   if (!session?.user?.id) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  if (session.user.role !== "SELLER") return NextResponse.json({ message: "Forbidden: Seller access required" }, { status: 403 });
+  if (!hasSellerAccess(session.user.role)) return NextResponse.json({ message: "Forbidden: Seller access required" }, { status: 403 });
 
   const store = await StoreService.getByUserId(session.user.id);
   if (!store) return NextResponse.json({ message: "Store not found" }, { status: 404 });
@@ -19,7 +20,7 @@ export async function GET() {
 export async function POST(req: Request) {
   const session = await getAppSession();
   if (!session?.user?.id) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  if (session.user.role !== "SELLER") return NextResponse.json({ message: "Forbidden: Seller access required" }, { status: 403 });
+  if (!hasSellerAccess(session.user.role)) return NextResponse.json({ message: "Forbidden: Seller access required" }, { status: 403 });
 
   try {
     const json = await req.json();

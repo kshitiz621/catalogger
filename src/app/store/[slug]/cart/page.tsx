@@ -1,6 +1,7 @@
 import { PublicStoreService } from "@/lib/services/public-store.service";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
+import { createStorePrivateMetadata } from "@/lib/seo/store-metadata";
 import CartClient from "./CartClient";
 
 interface PageProps {
@@ -11,7 +12,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
   const store = await PublicStoreService.getStoreBySlug(slug);
   if (!store) return { title: "Store Not Found" };
-  return { title: `Cart | ${store.name}` };
+  return createStorePrivateMetadata(`Cart | ${store.name}`);
 }
 
 export default async function CartPage({ params }: PageProps) {

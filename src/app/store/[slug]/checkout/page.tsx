@@ -1,6 +1,7 @@
 import { PublicStoreService } from "@/lib/services/public-store.service";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
+import { createStorePrivateMetadata } from "@/lib/seo/store-metadata";
 import CheckoutClient from "./CheckoutClient";
 
 interface PageProps {
@@ -11,7 +12,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
   const store = await PublicStoreService.getStoreBySlug(slug);
   if (!store) return { title: "Store Not Found" };
-  return { title: `Checkout | ${store.name}` };
+  return createStorePrivateMetadata(`Checkout | ${store.name}`);
 }
 
 export default async function CheckoutPage({ params }: PageProps) {

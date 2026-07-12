@@ -1,7 +1,9 @@
 "use server";
 
 import { getAppSession } from "@/lib/auth/app-session";
+import { canAccessPlatformAdmin } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
+import { initStoreAnalytics } from "@/lib/services/analytics.service";
 import { PlatformSettingsSchema, SellerCreateSchema, SellerUpdateSchema } from "@/lib/schema";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
@@ -9,7 +11,7 @@ import { revalidatePath } from "next/cache";
 // Utility to enforce Super Admin role
 async function ensureSuperAdmin() {
   const session = await getAppSession();
-  if (!session || session.user.role !== "SUPER_ADMIN") {
+  if (!session || !canAccessPlatformAdmin(session.user.role)) {
     throw new Error("Unauthorized: Super Admin access required");
   }
 }
@@ -138,6 +140,10 @@ export async function createSeller(data: any) {
     include: { store: true }
   });
 
+  if (newSeller.store) {
+    await initStoreAnalytics(newSeller.store.id);
+  }
+
   revalidatePath("/platform/sellers");
   revalidatePath("/platform/dashboard");
   return { success: true, seller: newSeller };
@@ -187,14 +193,14 @@ export async function updateSeller(id: string, data: any) {
       }
     });
   } else {
-    // If somehow they don't have a store
-    await prisma.store.create({
+    const createdStore = await prisma.store.create({
       data: {
         name: storeName,
         slug: storeSlug,
         userId: id
       }
     });
+    await initStoreAnalytics(createdStore.id);
   }
 
   revalidatePath("/platform/sellers");

@@ -9,11 +9,13 @@ import SidebarContent from "./SidebarContent";
 export default function DashboardLayoutClient({
   children,
   store,
-  session
+  session,
+  isSuperAdmin = false,
 }: {
   children: React.ReactNode;
   store: any;
   session: any;
+  isSuperAdmin?: boolean;
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -36,6 +38,7 @@ export default function DashboardLayoutClient({
           userName={session.user?.name || ""}
           userEmail={session.user?.email || ""}
           logoUrl={store?.logoUrl}
+          isSuperAdmin={isSuperAdmin}
         />
       </aside>
 
@@ -66,6 +69,7 @@ export default function DashboardLayoutClient({
           userEmail={session.user?.email || ""}
           logoUrl={store?.logoUrl}
           closeMobileMenu={() => setIsMobileMenuOpen(false)}
+          isSuperAdmin={isSuperAdmin}
         />
       </aside>
 

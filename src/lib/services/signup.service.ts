@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { initStoreAnalytics } from "@/lib/services/analytics.service";
 import { findStoreIdBySlug } from "@/lib/prisma-compat";
 import { DEFAULT_CATEGORY_NAME, DEFAULT_STORE_THEME } from "@/types/onboarding";
 import { SellerSignupSchema } from "@/lib/schema";
@@ -96,6 +97,8 @@ export async function registerSellerStore(input: SellerRegistrationInput) {
 
   const user = await createSellerUser(input);
   const store = await createSellerStore(user.id, input);
+
+  await initStoreAnalytics(store.id);
 
   await prisma.category.create({
     data: {

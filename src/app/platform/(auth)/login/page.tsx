@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { authClient } from "@/lib/auth/client";
-import { useRouter } from "next/navigation";
+import { safeEmailSignIn } from "@/lib/auth/safe-sign-in";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, AlertCircle, Mail, Lock, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,10 +11,18 @@ import { Label } from "@/components/ui/label";
 
 export default function PlatformLoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const queryEmail = searchParams.get("email");
+    const queryPassword = searchParams.get("password");
+    if (queryEmail) setEmail(queryEmail);
+    if (queryPassword) setPassword(queryPassword);
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,28 +30,35 @@ export default function PlatformLoginPage() {
     setError("");
 
     try {
-      let { error: signInError } = await authClient.signIn.email({
-        email,
-        password,
-      });
+      let { error: signInError } = await safeEmailSignIn(email, password);
 
       if (signInError) {
         const legacyRes = await fetch("/api/auth/legacy-login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify({ email, password }),
         });
 
         if (legacyRes.ok) {
-          ({ error: signInError } = await authClient.signIn.email({
-            email,
-            password,
-          }));
+          ({ error: signInError } = await safeEmailSignIn(email, password));
+        } else if (legacyRes.status === 401) {
+          setError("Invalid email or password.");
+          return;
         }
       }
 
       if (signInError) {
-        setError(signInError.message || "Invalid email or password. Please try again.");
+        const message = signInError.message || "Invalid email or password. Please try again.";
+        const isNetwork =
+          message.toLowerCase().includes("fetch") ||
+          message.toLowerCase().includes("timeout") ||
+          message.toLowerCase().includes("network");
+        setError(
+          isNetwork
+            ? "Could not reach the auth server. Check Neon Auth env vars and restart the dev server."
+            : message
+        );
         return;
       }
 
@@ -57,8 +73,9 @@ export default function PlatformLoginPage() {
 
       router.push("/platform/dashboard");
       router.refresh();
-    } catch {
-      setError("Could not reach the auth server. Check Neon Auth env vars and restart the dev server.");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Authentication failed.";
+      setError(message);
     } finally {
       setLoading(false);
     }

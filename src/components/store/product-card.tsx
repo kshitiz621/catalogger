@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Package, Plus, ShoppingCart } from "lucide-react";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import toast from "react-hot-toast";
 import type { PublicProduct, StorefrontTheme } from "@/types/storefront";
 import { formatPrice } from "@/lib/storefront/format";
@@ -46,11 +47,13 @@ export function ProductCard({
     >
       <div className="relative aspect-square w-full overflow-hidden bg-muted/40 border-b border-border">
         {product.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <OptimizedImage
             src={product.imageUrl}
             alt={product.name}
-            className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+            fill
+            containerClassName="h-full w-full"
+            className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           />
         ) : (
           <div className="flex h-full items-center justify-center text-muted-foreground">

@@ -52,8 +52,14 @@ export async function ensureAppSession(retries = 5): Promise<{ ok: boolean; role
   return { ok: false };
 }
 
+import { canAccessPlatformAdmin } from "@/lib/auth/roles";
+
 export function getDashboardPath(role?: string) {
-  return role === "SUPER_ADMIN" ? "/platform/dashboard" : "/dashboard";
+  return "/dashboard";
+}
+
+export function getPlatformDashboardPath(role?: string) {
+  return canAccessPlatformAdmin(role) ? "/platform/dashboard" : "/login";
 }
 
 export function getStoreSetupPath() {

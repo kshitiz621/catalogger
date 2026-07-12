@@ -78,7 +78,11 @@ const legacyLayoutSelect = {
 } as const;
 
 function isPrismaSchemaMismatch(error: unknown): boolean {
-  return error instanceof Prisma.PrismaClientValidationError;
+  if (error instanceof Prisma.PrismaClientValidationError) return true;
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    (error.code === "P2022" || error.code === "P2021")
+  );
 }
 
 async function findStoreForPublic<T extends Record<string, boolean>>(
@@ -86,11 +90,29 @@ async function findStoreForPublic<T extends Record<string, boolean>>(
   select: T,
   legacySelect: T
 ) {
+  const activeWhere = {
+    slug,
+    status: "ACTIVE" as const,
+    user: { status: "ACTIVE" as const },
+  };
+
   try {
-    return await prisma.store.findUnique({ where: { slug }, select });
+    return await prisma.store.findFirst({
+      where: activeWhere,
+      select,
+    });
   } catch (error) {
     if (!isPrismaSchemaMismatch(error)) throw error;
-    return prisma.store.findUnique({ where: { slug }, select: legacySelect });
+
+    try {
+      return await prisma.store.findFirst({
+        where: activeWhere,
+        select: legacySelect,
+      });
+    } catch (legacyError) {
+      if (!isPrismaSchemaMismatch(legacyError)) throw legacyError;
+      return prisma.store.findUnique({ where: { slug }, select: legacySelect });
+    }
   }
 }
 

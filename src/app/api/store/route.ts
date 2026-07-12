@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAppSession } from "@/lib/auth/app-session";
+import { hasSellerAccess } from "@/lib/auth/roles";
 import { StoreSettingsService } from "@/lib/services/store-settings.service";
 import { StoreUpdateSchema } from "@/lib/schema";
 
@@ -11,7 +12,7 @@ export async function GET() {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    if (session.user.role !== "SELLER") {
+    if (!hasSellerAccess(session.user.role)) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
@@ -36,7 +37,7 @@ export async function PUT(req: Request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    if (session.user.role !== "SELLER") {
+    if (!hasSellerAccess(session.user.role)) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 

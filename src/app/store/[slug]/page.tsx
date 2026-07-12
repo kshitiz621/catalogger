@@ -1,7 +1,10 @@
 import { PublicStoreService } from "@/lib/services/public-store.service";
+import { createStoreMetadata } from "@/lib/seo/store-metadata";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import StoreCatalogue from "./StoreCatalogue";
+
+export const revalidate = 60;
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -15,22 +18,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: "Store Not Found" };
   }
 
-  const title = store.storeTitle || `${store.name} | Catalogue`;
-
-  return {
-    title,
-    description:
-      store.seoDescription ||
-      store.description ||
-      `Shop ${store.name} — browse products and order via WhatsApp.`,
-    keywords: store.seoKeywords?.split(",").map((k) => k.trim()).filter(Boolean),
-    icons: store.logoUrl
-      ? [
-          { rel: "icon", url: store.logoUrl },
-          { rel: "apple-touch-icon", url: store.logoUrl },
-        ]
-      : undefined,
-  };
+  return createStoreMetadata(store);
 }
 
 export default async function StorePage({ params }: PageProps) {
